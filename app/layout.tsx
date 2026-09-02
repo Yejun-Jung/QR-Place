@@ -1,6 +1,13 @@
 import type { Metadata, Viewport } from "next";
 import type { ReactNode } from "react";
+import { Noto_Sans_KR } from "next/font/google";
 import "./globals.css";
+
+const notoSansKR = Noto_Sans_KR({
+  subsets: ["latin"],
+  weight: ["400", "500", "700", "800"],
+  variable: "--font-noto-sans-kr",
+});
 
 export const metadata: Metadata = {
   title: "QR-Place",
@@ -15,7 +22,7 @@ export const viewport: Viewport = {
 
 export default function RootLayout({ children }: { children: ReactNode }) {
   return (
-    <html lang="ko">
+    <html lang="ko" className={notoSansKR.variable}>
       <body>
         <div className="app">{children}</div>
       </body>
