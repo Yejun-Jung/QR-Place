@@ -1,0 +1,26 @@
+// SQLite 데모 어댑터 스모크 테스트 (DB 세팅 불필요)
+// 실행: npm run smoke
+import { sqliteAdapter } from "../lib/db.sqlite.ts";
+
+const menus = await sqliteAdapter.getStoreMenus(1);
+console.log(`메뉴 ${menus.length}개`);
+
+const popularity = await sqliteAdapter.getMenuPopularity(1, 30);
+console.log("최근 30일 주문수:", Object.fromEntries(popularity));
+
+const logs = await sqliteAdapter.getUserRecentLogs(1, 30);
+console.log(`유저 1 최근 로그 ${logs.length}건`);
+
+const inserted = await sqliteAdapter.insertViewLog({
+  userId: 1,
+  tableNumber: "SMOKE",
+  storeId: 1,
+  menuId: 3,
+  actionType: "order",
+});
+console.log("로그 삽입:", inserted);
+
+console.log("일별 방문자:", await sqliteAdapter.getDailyVisitors(1, 30));
+console.log("인기 메뉴 TOP3:", await sqliteAdapter.getPopularMenus(1, 30, 3));
+
+console.log("\n✅ SQLite 어댑터 정상");

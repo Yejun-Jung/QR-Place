@@ -1,0 +1,557 @@
+:root {
+  --bg: #f4f5f7;
+  --surface: #ffffff;
+  --line: #e5e7eb;
+  --text: #18181b;
+  --muted: #71717a;
+  --brand: #ea580c;
+  --brand-dark: #c2410c;
+  --brand-soft: #fff1e7;
+  --ok: #16a34a;
+  --warn: #b45309;
+  --radius: 14px;
+  --shadow: 0 1px 2px rgba(0, 0, 0, 0.04), 0 8px 24px rgba(0, 0, 0, 0.06);
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html,
+body {
+  margin: 0;
+  padding: 0;
+  background: var(--bg);
+  color: var(--text);
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto,
+    "Apple SD Gothic Neo", "Noto Sans KR", sans-serif;
+  -webkit-font-smoothing: antialiased;
+  line-height: 1.5;
+}
+
+a {
+  color: var(--brand);
+  text-decoration: none;
+}
+
+/* 모바일 우선: 앱은 460px 폭 안에 */
+.app {
+  max-width: 460px;
+  margin: 0 auto;
+  min-height: 100vh;
+  background: var(--bg);
+  padding: 0 0 120px;
+  position: relative;
+}
+
+.app-header {
+  position: sticky;
+  top: 0;
+  z-index: 20;
+  background: var(--surface);
+  border-bottom: 1px solid var(--line);
+  padding: 14px 16px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.app-header .back {
+  border: none;
+  background: transparent;
+  font-size: 1.2rem;
+  cursor: pointer;
+  padding: 4px;
+  color: var(--text);
+  line-height: 1;
+}
+
+.app-header h1 {
+  font-size: 1.05rem;
+  margin: 0;
+  flex: 1;
+}
+
+.app-header .sub {
+  font-size: 0.78rem;
+  color: var(--muted);
+}
+
+.section {
+  padding: 16px;
+}
+
+h2.section-title {
+  font-size: 0.95rem;
+  margin: 20px 16px 8px;
+  color: var(--muted);
+  font-weight: 600;
+}
+
+.muted {
+  color: var(--muted);
+  font-size: 0.85rem;
+}
+
+/* ── 추천 배너 ── */
+.blurb {
+  margin: 14px 16px;
+  background: var(--brand-soft);
+  border: 1px solid #fed7aa;
+  color: var(--brand-dark);
+  padding: 12px 14px;
+  border-radius: var(--radius);
+  font-size: 0.9rem;
+}
+
+/* ── 카테고리 칩 ── */
+.chips {
+  display: flex;
+  gap: 8px;
+  overflow-x: auto;
+  padding: 8px 16px 12px;
+  -webkit-overflow-scrolling: touch;
+}
+.chip {
+  flex: none;
+  border: 1px solid var(--line);
+  background: var(--surface);
+  color: var(--muted);
+  border-radius: 999px;
+  padding: 6px 14px;
+  font-size: 0.85rem;
+  cursor: pointer;
+  white-space: nowrap;
+}
+.chip.active {
+  background: var(--brand);
+  border-color: var(--brand);
+  color: #fff;
+  font-weight: 600;
+}
+
+/* ── 메뉴 행 ── */
+.menu-list {
+  padding: 0 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+.menu-row {
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  padding: 14px;
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  cursor: pointer;
+  box-shadow: var(--shadow);
+}
+.menu-row.rec {
+  border-color: #fdba74;
+}
+.menu-row .name {
+  font-weight: 600;
+}
+.menu-row .desc {
+  color: var(--muted);
+  font-size: 0.82rem;
+  margin-top: 3px;
+}
+.menu-row .meta {
+  color: var(--muted);
+  font-size: 0.76rem;
+  margin-top: 6px;
+}
+.menu-row .price {
+  font-weight: 700;
+  white-space: nowrap;
+}
+.badge {
+  display: inline-block;
+  font-size: 0.68rem;
+  font-weight: 700;
+  color: var(--brand-dark);
+  background: #ffedd5;
+  border-radius: 999px;
+  padding: 2px 8px;
+  margin-bottom: 5px;
+}
+.in-cart {
+  font-size: 0.72rem;
+  font-weight: 700;
+  color: var(--brand);
+  margin-left: 6px;
+}
+
+/* ── 바텀시트 ── */
+.sheet-backdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.4);
+  z-index: 40;
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+}
+.sheet {
+  width: 100%;
+  max-width: 460px;
+  background: var(--surface);
+  border-radius: 18px 18px 0 0;
+  padding: 20px 16px calc(16px + env(safe-area-inset-bottom));
+  animation: slideUp 0.18s ease-out;
+}
+@keyframes slideUp {
+  from {
+    transform: translateY(100%);
+  }
+}
+.sheet h3 {
+  margin: 0 0 4px;
+  font-size: 1.15rem;
+}
+.sheet .desc {
+  color: var(--muted);
+  font-size: 0.88rem;
+  margin-bottom: 16px;
+}
+
+/* ── 수량 스텝퍼 ── */
+.stepper {
+  display: inline-flex;
+  align-items: center;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  overflow: hidden;
+}
+.stepper button {
+  border: none;
+  background: var(--surface);
+  width: 38px;
+  height: 38px;
+  font-size: 1.1rem;
+  cursor: pointer;
+  color: var(--text);
+}
+.stepper button:disabled {
+  color: var(--line);
+}
+.stepper span {
+  min-width: 34px;
+  text-align: center;
+  font-weight: 600;
+}
+
+/* ── 버튼 ── */
+.btn {
+  display: block;
+  width: 100%;
+  border: none;
+  border-radius: 12px;
+  padding: 15px;
+  font-size: 1rem;
+  font-weight: 700;
+  cursor: pointer;
+  background: var(--brand);
+  color: #fff;
+}
+.btn:disabled {
+  background: #d4d4d8;
+  cursor: not-allowed;
+}
+.btn.ghost {
+  background: var(--surface);
+  color: var(--text);
+  border: 1px solid var(--line);
+}
+.btn.row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+/* ── 하단 고정 장바구니 바 ── */
+.cartbar {
+  position: fixed;
+  left: 50%;
+  transform: translateX(-50%);
+  bottom: 16px;
+  width: calc(100% - 32px);
+  max-width: 428px;
+  z-index: 30;
+}
+
+/* ── 카트/체크아웃 라인 ── */
+.line {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  padding: 14px;
+  margin-bottom: 10px;
+}
+.line .name {
+  font-weight: 600;
+}
+.line .unit {
+  color: var(--muted);
+  font-size: 0.8rem;
+}
+
+.summary {
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  padding: 16px;
+  margin: 0 16px;
+}
+.summary .row {
+  display: flex;
+  justify-content: space-between;
+  padding: 5px 0;
+  font-size: 0.9rem;
+}
+.summary .row.total {
+  border-top: 1px solid var(--line);
+  margin-top: 8px;
+  padding-top: 12px;
+  font-size: 1.05rem;
+  font-weight: 700;
+}
+
+/* ── 결제 수단 ── */
+.pay-methods {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin: 0 16px;
+}
+.pay-method {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  border: 1.5px solid var(--line);
+  border-radius: var(--radius);
+  padding: 14px;
+  background: var(--surface);
+  cursor: pointer;
+  font-weight: 600;
+}
+.pay-method.active {
+  border-color: var(--brand);
+  background: var(--brand-soft);
+}
+.pay-method .radio {
+  width: 18px;
+  height: 18px;
+  border-radius: 999px;
+  border: 2px solid var(--line);
+  flex: none;
+}
+.pay-method.active .radio {
+  border-color: var(--brand);
+  background: var(--brand);
+  box-shadow: inset 0 0 0 3px #fff;
+}
+
+/* ── 카드 입력 (모의) ── */
+.card-form {
+  margin: 14px 16px 0;
+  display: grid;
+  gap: 10px;
+}
+.card-form .two {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+}
+label.field {
+  display: block;
+  font-size: 0.78rem;
+  color: var(--muted);
+  margin-bottom: 4px;
+}
+input.inp {
+  width: 100%;
+  font: inherit;
+  padding: 12px;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  background: var(--surface);
+}
+input.inp:focus {
+  outline: 2px solid var(--brand);
+  border-color: var(--brand);
+}
+
+.notice {
+  margin: 14px 16px;
+  font-size: 0.78rem;
+  color: var(--muted);
+  background: #fafafa;
+  border: 1px dashed var(--line);
+  border-radius: 10px;
+  padding: 10px 12px;
+}
+
+/* ── 주문 완료 ── */
+.done {
+  text-align: center;
+  padding: 40px 24px 20px;
+}
+.done .check {
+  width: 64px;
+  height: 64px;
+  border-radius: 999px;
+  background: var(--ok);
+  color: #fff;
+  font-size: 2rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin: 0 auto 16px;
+}
+.done h2 {
+  margin: 0 0 6px;
+}
+
+/* ── 상태 뱃지 ── */
+.status {
+  font-size: 0.72rem;
+  font-weight: 700;
+  padding: 3px 8px;
+  border-radius: 999px;
+}
+.status.paid {
+  background: #dcfce7;
+  color: #15803d;
+}
+.status.pending {
+  background: #fef9c3;
+  color: #a16207;
+}
+.status.cancelled {
+  background: #f4f4f5;
+  color: #71717a;
+}
+
+/* ── 대시보드 ── */
+.dash {
+  max-width: 900px;
+}
+.kpi-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 10px;
+  padding: 0 16px;
+}
+.kpi {
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  padding: 14px;
+}
+.kpi .label {
+  font-size: 0.75rem;
+  color: var(--muted);
+}
+.kpi .value {
+  font-size: 1.3rem;
+  font-weight: 700;
+  margin-top: 4px;
+}
+.chart-box {
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  padding: 16px;
+  margin: 12px 16px;
+}
+.chart-box h3 {
+  font-size: 0.95rem;
+  margin: 0 0 12px;
+}
+.table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.85rem;
+}
+.table th,
+.table td {
+  text-align: left;
+  padding: 10px 8px;
+  border-bottom: 1px solid var(--line);
+}
+.table th {
+  color: var(--muted);
+  font-weight: 600;
+}
+.seg {
+  display: inline-flex;
+  gap: 6px;
+  margin: 12px 16px 0;
+}
+.seg button {
+  border: 1px solid var(--line);
+  background: var(--surface);
+  border-radius: 8px;
+  padding: 6px 12px;
+  font-size: 0.85rem;
+  cursor: pointer;
+}
+.seg button.active {
+  background: var(--brand);
+  border-color: var(--brand);
+  color: #fff;
+  font-weight: 600;
+}
+
+.empty {
+  text-align: center;
+  color: var(--muted);
+  padding: 60px 20px;
+}
+
+/* ── QR 코드 생성 ── */
+.qr-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 10px;
+  padding: 0 16px 16px;
+}
+.qr-card {
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  padding: 12px;
+  text-align: center;
+}
+.qr-card canvas {
+  width: 100%;
+  height: auto;
+}
+.qr-card .label {
+  font-weight: 600;
+  margin-top: 8px;
+}
+.qr-card .url {
+  font-size: 0.72rem;
+  color: var(--muted);
+  word-break: break-all;
+  margin: 4px 0 10px;
+}
+
+ul.plain {
+  list-style: none;
+  padding: 0 16px;
+  margin: 0;
+}
+ul.plain li {
+  padding: 12px 0;
+  border-bottom: 1px solid var(--line);
+}

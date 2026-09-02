@@ -1,0 +1,36 @@
+{
+  "name": "qr-place",
+  "version": "0.1.0",
+  "private": true,
+  "engines": {
+    "node": ">=22.5.0"
+  },
+  "scripts": {
+    "dev": "next dev",
+    "build": "next build",
+    "start": "next start",
+    "lint": "next lint",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "smoke": "node --experimental-strip-types scripts/smoke.mjs",
+    "db:reset": "rm -f qr-place.db qr-place.db-shm qr-place.db-wal",
+    "db:setup:pg": "node --env-file=.env.local scripts/db.mjs"
+  },
+  "dependencies": {
+    "@vercel/postgres": "^0.10.0",
+    "chart.js": "^4.4.7",
+    "next": "^15.1.4",
+    "qrcode": "^1.5.4",
+    "react": "^19.0.0",
+    "react-chartjs-2": "^5.3.0",
+    "react-dom": "^19.0.0"
+  },
+  "devDependencies": {
+    "@types/node": "^24.0.0",
+    "@types/qrcode": "^1.5.6",
+    "@types/react": "^19.0.5",
+    "@types/react-dom": "^19.0.3",
+    "typescript": "^5.7.3",
+    "vitest": "^2.1.8"
+  }
+}

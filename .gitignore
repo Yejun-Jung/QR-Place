@@ -1,0 +1,20 @@
+/node_modules
+/.next
+/out
+/build
+*.tsbuildinfo
+next-env.d.ts
+
+.env
+.env*.local
+
+# SQLite 데모 DB
+*.db
+*.db-shm
+*.db-wal
+
+.superpowers/
+
+.DS_Store
+npm-debug.log*
+yarn-error.log*
