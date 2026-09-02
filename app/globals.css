@@ -461,9 +461,13 @@ input.inp:focus {
   color: #71717a;
 }
 
-/* ── 대시보드 ── */
+/* ── 대시보드 (PC 폭) ── */
 .dash {
   max-width: 900px;
+  margin: 0 auto;
+  min-height: 100vh;
+  background: var(--bg);
+  padding-bottom: 60px;
 }
 .kpi-grid {
   display: grid;
@@ -512,6 +516,7 @@ input.inp:focus {
   text-align: left;
   padding: 10px 8px;
   border-bottom: 1px solid var(--line);
+  white-space: nowrap;
 }
 .table th {
   color: var(--muted);

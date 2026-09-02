@@ -134,7 +134,7 @@ export default function DashboardPage() {
   }, [stats]);
 
   return (
-    <div className="dash">
+    <>
       <header className="app-header">
         <h1>점주 대시보드</h1>
         <span className="sub">매장 {storeId}</span>
@@ -267,6 +267,6 @@ export default function DashboardPage() {
           </div>
         )}
       </div>
-    </div>
+    </>
   );
 }

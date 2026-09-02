@@ -2,7 +2,7 @@ import Link from "next/link";
 
 export default function HomePage() {
   return (
-    <>
+    <div className="app">
       <header className="app-header">
         <h1>QR-Place</h1>
         <span className="sub">데모</span>
@@ -48,6 +48,6 @@ export default function HomePage() {
           <code> app/api/orders/[orderId]/pay/route.ts </code>에 표시돼 있습니다.
         </div>
       </div>
-    </>
+    </div>
   );
 }

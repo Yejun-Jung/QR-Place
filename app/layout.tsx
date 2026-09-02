@@ -23,9 +23,7 @@ export const viewport: Viewport = {
 export default function RootLayout({ children }: { children: ReactNode }) {
   return (
     <html lang="ko" className={notoSansKR.variable}>
-      <body>
-        <div className="app">{children}</div>
-      </body>
+      <body>{children}</body>
     </html>
   );
 }
