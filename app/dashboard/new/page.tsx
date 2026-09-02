@@ -84,32 +84,34 @@ export default function NewStorePage() {
       </div>
 
       {places && (
-        <div className="section" style={{ paddingTop: 0 }}>
+        <>
           {places.length === 0 ? (
             <p className="empty">검색 결과가 없습니다.</p>
           ) : (
-            <ul className="plain">
+            <div className="pay-methods">
               {places.map((p) => (
-                <li
+                <div
                   key={p.placeId}
+                  className={`pay-method${
+                    selected?.placeId === p.placeId ? " active" : ""
+                  }`}
                   onClick={() => setSelected(p)}
-                  style={{
-                    cursor: "pointer",
-                    borderRadius: 10,
-                    padding: 10,
-                    background:
-                      selected?.placeId === p.placeId
-                        ? "var(--brand-soft)"
-                        : "transparent",
-                  }}
                 >
-                  <div style={{ fontWeight: 600 }}>{p.name}</div>
-                  <div className="muted">{p.address}</div>
-                </li>
+                  <span className="radio" />
+                  <div>
+                    <div>{p.name}</div>
+                    <div
+                      className="muted"
+                      style={{ fontWeight: 400, marginTop: 2 }}
+                    >
+                      {p.address}
+                    </div>
+                  </div>
+                </div>
               ))}
-            </ul>
+            </div>
           )}
-        </div>
+        </>
       )}
 
       {selected && (
