@@ -35,6 +35,9 @@ export default function HomePage() {
         </h2>
         <ul className="plain" style={{ padding: 0 }}>
           <li>
+            <Link href="/dashboard">🔑 점주 로그인</Link>
+          </li>
+          <li>
             <Link href="/dashboard/1">📊 대시보드 — 매출·방문자·주문·인기메뉴</Link>
           </li>
           <li>
