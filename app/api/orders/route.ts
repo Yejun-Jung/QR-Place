@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import { auth } from "@/auth";
 import { createOrder } from "@/lib/db";
 
 export const runtime = "nodejs";
@@ -7,6 +8,8 @@ export const runtime = "nodejs";
  * POST /api/orders
  * body: { storeId, tableNumber?, userId?, items: [{ menuId, quantity }] }
  * → 'pending' 주문 생성. 가격/이름은 서버에서 DB 기준으로 스냅샷 (위조 방지).
+ * userId 는 로그인 세션이 있으면 세션 값을 우선하고, 없으면 body 의 값(데모용
+ * ?userId= 흐름)으로 폴백한다.
  */
 export async function POST(req: NextRequest) {
   let body: Record<string, unknown>;
@@ -36,13 +39,17 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "no valid items" }, { status: 400 });
   }
 
-  const userId =
+  const session = await auth();
+  const bodyUserId =
     body.userId == null || body.userId === "" ? null : Number(body.userId);
+  const userId =
+    session?.user?.id ??
+    (Number.isFinite(bodyUserId as number) ? (bodyUserId as number) : null);
 
   try {
     const order = await createOrder({
       storeId,
-      userId: Number.isFinite(userId as number) ? (userId as number) : null,
+      userId,
       tableNumber: body.tableNumber == null ? null : String(body.tableNumber),
       items: normalizedItems,
     });

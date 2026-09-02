@@ -5,7 +5,7 @@ declare module "next-auth" {
     user: {
       id: number;
       nickname: string | null;
-    } & DefaultSession["user"];
+    } & Omit<NonNullable<DefaultSession["user"]>, "id">;
   }
 }
 
