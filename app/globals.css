@@ -3,7 +3,7 @@
   --surface: #ffffff;
   --line: #e5e7eb;
   --text: #111827;
-  --muted: #9ca3af;
+  --muted: #6b7280;
   --brand: #f97316;
   --brand-dark: #c2410c;
   --brand-soft: #fff1e7;
@@ -31,7 +31,7 @@ body {
 }
 
 a {
-  color: var(--brand);
+  color: var(--brand-dark);
   text-decoration: none;
 }
 
@@ -151,10 +151,6 @@ h2.section-title {
   cursor: pointer;
   box-shadow: var(--shadow);
   transition: transform 0.18s ease, box-shadow 0.18s ease;
-}
-.menu-row:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 6px 16px rgba(0, 0, 0, 0.08);
 }
 .menu-row.rec {
   border-color: #fdba74;
@@ -277,6 +273,10 @@ h2.section-title {
   .btn:hover:not(:disabled) {
     filter: brightness(1.08);
   }
+  .btn.ghost:hover:not(:disabled) {
+    background: var(--bg);
+    border-color: var(--muted);
+  }
 }
 .btn.ghost {
   background: var(--surface);
@@ -362,10 +362,6 @@ h2.section-title {
   font-weight: 600;
   box-shadow: var(--shadow);
   transition: transform 0.18s ease, box-shadow 0.18s ease;
-}
-.pay-method:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 6px 16px rgba(0, 0, 0, 0.08);
 }
 .pay-method.active {
   border-color: var(--brand);
@@ -560,10 +556,6 @@ input.inp:focus {
   box-shadow: var(--shadow);
   transition: transform 0.18s ease, box-shadow 0.18s ease;
 }
-.qr-card:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 6px 16px rgba(0, 0, 0, 0.08);
-}
 .qr-card canvas {
   width: 100%;
   height: auto;
@@ -577,6 +569,15 @@ input.inp:focus {
   color: var(--muted);
   word-break: break-all;
   margin: 4px 0 10px;
+}
+
+@media (hover: hover) {
+  .menu-row:hover,
+  .qr-card:hover,
+  .pay-method:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 16px rgba(0, 0, 0, 0.08);
+  }
 }
 
 ul.plain {
