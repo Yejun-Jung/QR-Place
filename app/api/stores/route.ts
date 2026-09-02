@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import { auth } from "@/auth";
 import { createStore } from "@/lib/db";
 import type { NewStoreInput } from "@/lib/types";
 
@@ -36,13 +37,13 @@ export async function POST(req: NextRequest) {
     );
   }
 
-  // TODO(Task 3): 로그인 세션의 유저 id로 교체
+  const session = await auth();
   const input: NewStoreInput = {
     name,
     kakaoPlaceId,
     latitude,
     longitude,
-    ownerUserId: null,
+    ownerUserId: session?.user?.id ?? null,
   };
 
   try {
