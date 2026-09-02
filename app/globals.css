@@ -1,16 +1,17 @@
 :root {
-  --bg: #f4f5f7;
+  --bg: #f9fafb;
   --surface: #ffffff;
   --line: #e5e7eb;
-  --text: #18181b;
-  --muted: #71717a;
-  --brand: #ea580c;
+  --text: #111827;
+  --muted: #9ca3af;
+  --brand: #f97316;
   --brand-dark: #c2410c;
   --brand-soft: #fff1e7;
   --ok: #16a34a;
   --warn: #b45309;
   --radius: 14px;
-  --shadow: 0 1px 2px rgba(0, 0, 0, 0.04), 0 8px 24px rgba(0, 0, 0, 0.06);
+  --shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+  --header-bg: #111827;
 }
 
 * {
@@ -48,8 +49,8 @@ a {
   position: sticky;
   top: 0;
   z-index: 20;
-  background: var(--surface);
-  border-bottom: 1px solid var(--line);
+  background: var(--header-bg);
+  border-bottom: 1px solid var(--header-bg);
   padding: 14px 16px;
   display: flex;
   align-items: center;
@@ -62,7 +63,7 @@ a {
   font-size: 1.2rem;
   cursor: pointer;
   padding: 4px;
-  color: var(--text);
+  color: #fff;
   line-height: 1;
 }
 
@@ -70,11 +71,13 @@ a {
   font-size: 1.05rem;
   margin: 0;
   flex: 1;
+  color: #fff;
 }
 
 .app-header .sub {
   font-size: 0.78rem;
-  color: var(--muted);
+  color: var(--brand);
+  font-weight: 600;
 }
 
 .section {
@@ -147,6 +150,11 @@ h2.section-title {
   gap: 12px;
   cursor: pointer;
   box-shadow: var(--shadow);
+  transition: transform 0.18s ease, box-shadow 0.18s ease;
+}
+.menu-row:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 16px rgba(0, 0, 0, 0.08);
 }
 .menu-row.rec {
   border-color: #fdba74;
@@ -256,10 +264,19 @@ h2.section-title {
   cursor: pointer;
   background: var(--brand);
   color: #fff;
+  transition: transform 0.12s ease, filter 0.12s ease;
 }
 .btn:disabled {
   background: #d4d4d8;
   cursor: not-allowed;
+}
+.btn:active:not(:disabled) {
+  transform: scale(0.97);
+}
+@media (hover: hover) {
+  .btn:hover:not(:disabled) {
+    filter: brightness(1.08);
+  }
 }
 .btn.ghost {
   background: var(--surface);
@@ -294,6 +311,7 @@ h2.section-title {
   border-radius: var(--radius);
   padding: 14px;
   margin-bottom: 10px;
+  box-shadow: var(--shadow);
 }
 .line .name {
   font-weight: 600;
@@ -309,6 +327,7 @@ h2.section-title {
   border-radius: var(--radius);
   padding: 16px;
   margin: 0 16px;
+  box-shadow: var(--shadow);
 }
 .summary .row {
   display: flex;
@@ -341,6 +360,12 @@ h2.section-title {
   background: var(--surface);
   cursor: pointer;
   font-weight: 600;
+  box-shadow: var(--shadow);
+  transition: transform 0.18s ease, box-shadow 0.18s ease;
+}
+.pay-method:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 16px rgba(0, 0, 0, 0.08);
 }
 .pay-method.active {
   border-color: var(--brand);
@@ -455,6 +480,7 @@ input.inp:focus {
   border: 1px solid var(--line);
   border-radius: var(--radius);
   padding: 14px;
+  box-shadow: var(--shadow);
 }
 .kpi .label {
   font-size: 0.75rem;
@@ -471,6 +497,7 @@ input.inp:focus {
   border-radius: var(--radius);
   padding: 16px;
   margin: 12px 16px;
+  box-shadow: var(--shadow);
 }
 .chart-box h3 {
   font-size: 0.95rem;
@@ -530,6 +557,12 @@ input.inp:focus {
   border-radius: var(--radius);
   padding: 12px;
   text-align: center;
+  box-shadow: var(--shadow);
+  transition: transform 0.18s ease, box-shadow 0.18s ease;
+}
+.qr-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 16px rgba(0, 0, 0, 0.08);
 }
 .qr-card canvas {
   width: 100%;
