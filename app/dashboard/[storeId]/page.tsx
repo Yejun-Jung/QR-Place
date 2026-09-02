@@ -154,7 +154,12 @@ export default function DashboardPage() {
 
       <div
         className="section"
-        style={{ paddingBottom: 0, display: "grid", gap: 8 }}
+        style={{
+          paddingBottom: 0,
+          display: "grid",
+          gridTemplateColumns: "1fr 1fr",
+          gap: 8,
+        }}
       >
         <Link href={`/dashboard/${storeId}/menus`} className="btn ghost row">
           메뉴 관리
