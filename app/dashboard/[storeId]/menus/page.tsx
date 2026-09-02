@@ -140,41 +140,31 @@ export default function MenusPage() {
         </button>
       </div>
 
-      <div className="section" style={{ paddingTop: 0 }}>
-        {menus.length === 0 ? (
-          <p className="empty">등록된 메뉴가 없습니다.</p>
-        ) : (
-          <ul className="plain">
-            {menus.map((m) => (
-              <li
-                key={m.id}
-                style={{
-                  display: "flex",
-                  justifyContent: "space-between",
-                  alignItems: "center",
-                  gap: 8,
-                }}
-              >
-                <div>
-                  <div style={{ fontWeight: 600 }}>{m.name}</div>
-                  <div className="muted">
-                    {won(m.price)} · {m.tags.category ?? "-"} · 맵기{" "}
-                    {m.tags.spicy ?? 0}
-                  </div>
+      {menus.length === 0 ? (
+        <p className="empty">등록된 메뉴가 없습니다.</p>
+      ) : (
+        <div className="menu-list">
+          {menus.map((m) => (
+            <div key={m.id} className="menu-row" style={{ cursor: "default" }}>
+              <div>
+                <div className="name">{m.name}</div>
+                <div className="meta">
+                  {won(m.price)} · {m.tags.category ?? "-"} · 맵기{" "}
+                  {m.tags.spicy ?? 0}
                 </div>
-                <div style={{ display: "flex", gap: 6, flexShrink: 0 }}>
-                  <button className="btn ghost" onClick={() => openEdit(m)}>
-                    수정
-                  </button>
-                  <button className="btn ghost" onClick={() => remove(m)}>
-                    삭제
-                  </button>
-                </div>
-              </li>
-            ))}
-          </ul>
-        )}
-      </div>
+              </div>
+              <div style={{ display: "flex", gap: 6, flexShrink: 0 }}>
+                <button className="btn ghost" onClick={() => openEdit(m)}>
+                  수정
+                </button>
+                <button className="btn ghost" onClick={() => remove(m)}>
+                  삭제
+                </button>
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
 
       {showForm && (
         <div className="sheet-backdrop" onClick={() => setShowForm(false)}>
