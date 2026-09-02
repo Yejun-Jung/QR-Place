@@ -483,8 +483,11 @@ input.inp:focus {
   color: var(--muted);
 }
 .kpi .value {
-  font-size: 1.3rem;
+  font-size: 1.05rem;
   font-weight: 700;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
   margin-top: 4px;
 }
 .chart-box {
