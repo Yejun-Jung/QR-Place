@@ -9,6 +9,7 @@ import {
 } from "react";
 import Link from "next/link";
 import { useParams, useSearchParams } from "next/navigation";
+import { signIn, useSession } from "next-auth/react";
 import { useCart, won } from "@/lib/useCart";
 import type { RankedMenu, Store } from "@/lib/types";
 
@@ -25,6 +26,11 @@ function MenuBoard() {
   const search = useSearchParams();
   const userId = search.get("userId");
   const table = search.get("table");
+  const { data: session } = useSession();
+  // 로그인했으면 실제 세션 유저를 쓰고, 아니면 데모용 ?userId= 쿼리파라미터를 그대로 지원
+  const effectiveUserId = session?.user?.id
+    ? String(session.user.id)
+    : userId;
 
   const cart = useCart(storeId, table);
   const [data, setData] = useState<MenusResponse | null>(null);
@@ -48,7 +54,7 @@ function MenuBoard() {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          userId,
+          userId: effectiveUserId,
           storeId: Number(storeId),
           menuId,
           tableNumber: table,
@@ -56,19 +62,19 @@ function MenuBoard() {
         }),
       });
     },
-    [userId, storeId, table],
+    [effectiveUserId, storeId, table],
   );
 
   useEffect(() => {
     const qs = new URLSearchParams();
-    if (userId) qs.set("userId", userId);
+    if (effectiveUserId) qs.set("userId", effectiveUserId);
     fetch(`/api/stores/${storeId}/menus?${qs.toString()}`)
       .then((r) =>
         r.ok ? r.json() : Promise.reject(new Error(String(r.status))),
       )
       .then(setData)
       .catch((e) => setError(`메뉴를 불러오지 못했습니다 (${e.message})`));
-  }, [storeId, userId]);
+  }, [storeId, effectiveUserId]);
 
   const openSheet = (m: RankedMenu) => {
     setOpenMenu(m);
@@ -120,6 +126,32 @@ function MenuBoard() {
           {data.personalized ? "맞춤 추천" : "인기순"}
         </span>
       </header>
+
+      {!session?.user && (
+        <div
+          className="blurb"
+          style={{
+            display: "flex",
+            justifyContent: "space-between",
+            alignItems: "center",
+            gap: 8,
+          }}
+        >
+          <span>카카오로 로그인하고 맞춤 추천 받아보세요</span>
+          <button
+            className="btn ghost"
+            style={{ width: "auto", flexShrink: 0, padding: "6px 14px" }}
+            onClick={() => signIn("kakao")}
+          >
+            로그인
+          </button>
+        </div>
+      )}
+      {session?.user && (
+        <p className="muted" style={{ margin: "8px 16px 0" }}>
+          {session.user.nickname ?? session.user.name ?? "회원"}님, 안녕하세요
+        </p>
+      )}
 
       {data.blurb && <div className="blurb">💡 {data.blurb}</div>}
 
