@@ -67,6 +67,7 @@ export default function NewStorePage() {
         <div style={{ display: "flex", gap: 8 }}>
           <input
             className="inp"
+            style={{ flex: "1 1 0%" }}
             placeholder="예: 김가네 한식당"
             value={query}
             onChange={(e) => setQuery(e.target.value)}
@@ -74,7 +75,12 @@ export default function NewStorePage() {
           />
           <button
             className="btn"
-            style={{ width: "auto", padding: "0 20px" }}
+            style={{
+              width: "auto",
+              flexShrink: 0,
+              whiteSpace: "nowrap",
+              padding: "0 20px",
+            }}
             onClick={search}
             disabled={searching || !query.trim()}
           >
