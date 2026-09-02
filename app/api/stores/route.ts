@@ -36,7 +36,14 @@ export async function POST(req: NextRequest) {
     );
   }
 
-  const input: NewStoreInput = { name, kakaoPlaceId, latitude, longitude };
+  // TODO(Task 3): 로그인 세션의 유저 id로 교체
+  const input: NewStoreInput = {
+    name,
+    kakaoPlaceId,
+    latitude,
+    longitude,
+    ownerUserId: null,
+  };
 
   try {
     const store = await createStore(input);

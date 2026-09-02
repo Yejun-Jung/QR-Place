@@ -74,6 +74,7 @@ export interface Store {
   kakao_place_id: string | null;
   latitude: number | null;
   longitude: number | null;
+  owner_user_id: number | null;
 }
 
 /** 신규 매장 등록 입력 (카카오 로컬 API 검색 결과에서 채워짐) */
@@ -82,6 +83,14 @@ export interface NewStoreInput {
   kakaoPlaceId: string;
   latitude: number;
   longitude: number;
+  ownerUserId: number | null;
+}
+
+/** 카카오 로그인으로 만들어지는 내부 유저 레코드 */
+export interface User {
+  id: number;
+  kakao_id: string;
+  nickname: string | null;
 }
 
 export type OrderStatus = "pending" | "paid" | "cancelled";

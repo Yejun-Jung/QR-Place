@@ -37,7 +37,8 @@ CREATE TABLE IF NOT EXISTS stores (
   kakao_place_id TEXT,
   name           TEXT NOT NULL,
   latitude       REAL,
-  longitude      REAL
+  longitude      REAL,
+  owner_user_id  INTEGER REFERENCES users(id)
 );
 CREATE TABLE IF NOT EXISTS menus (
   id          INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -135,6 +136,12 @@ function db(): DatabaseSync {
   d.exec("PRAGMA journal_mode = WAL;");
   d.exec("PRAGMA foreign_keys = ON;");
   d.exec(SCHEMA);
+  const storeCols = d.prepare("PRAGMA table_info(stores)").all() as {
+    name: string;
+  }[];
+  if (!storeCols.some((c) => c.name === "owner_user_id")) {
+    d.exec("ALTER TABLE stores ADD COLUMN owner_user_id INTEGER REFERENCES users(id)");
+  }
   const seeded = d
     .prepare("SELECT COUNT(*) AS n FROM stores")
     .get() as { n: number } | undefined;
@@ -183,7 +190,7 @@ export const sqliteAdapter: DbAdapter = {
   async getStore(storeId) {
     return (
       queryOne<Store | undefined>(
-        "SELECT id, name, kakao_place_id, latitude, longitude FROM stores WHERE id = ?",
+        "SELECT id, name, kakao_place_id, latitude, longitude, owner_user_id FROM stores WHERE id = ?",
         storeId,
       ) ?? null
     );
@@ -191,12 +198,13 @@ export const sqliteAdapter: DbAdapter = {
 
   async createStore(input) {
     const row = queryOne<{ id: number }>(
-      `INSERT INTO stores (kakao_place_id, name, latitude, longitude)
-       VALUES (?, ?, ?, ?) RETURNING id`,
+      `INSERT INTO stores (kakao_place_id, name, latitude, longitude, owner_user_id)
+       VALUES (?, ?, ?, ?, ?) RETURNING id`,
       input.kakaoPlaceId,
       input.name,
       input.latitude,
       input.longitude,
+      input.ownerUserId,
     );
     return {
       id: Number(row.id),
@@ -204,7 +212,30 @@ export const sqliteAdapter: DbAdapter = {
       kakao_place_id: input.kakaoPlaceId,
       latitude: input.latitude,
       longitude: input.longitude,
+      owner_user_id: input.ownerUserId,
     } satisfies Store;
+  },
+
+  async getOrCreateUserByKakaoId(kakaoId, nickname) {
+    const existing = queryOne<
+      { id: number; kakao_id: string; nickname: string | null } | undefined
+    >("SELECT id, kakao_id, nickname FROM users WHERE kakao_id = ?", kakaoId);
+    if (existing) return existing;
+    const row = queryOne<{ id: number }>(
+      "INSERT INTO users (kakao_id, nickname) VALUES (?, ?) RETURNING id",
+      kakaoId,
+      nickname,
+    );
+    return { id: Number(row.id), kakao_id: kakaoId, nickname };
+  },
+
+  async getStoreByOwner(ownerUserId) {
+    return (
+      queryOne<Store | undefined>(
+        "SELECT id, name, kakao_place_id, latitude, longitude, owner_user_id FROM stores WHERE owner_user_id = ?",
+        ownerUserId,
+      ) ?? null
+    );
   },
 
   async getStoreMenus(storeId) {

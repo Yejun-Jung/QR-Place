@@ -22,6 +22,7 @@ import type {
   PopularMenuRow,
   RevenueRow,
   Store,
+  User,
 } from "./types";
 
 export type { InsertLogInput, DailyVisitorRow, PopularMenuRow };
@@ -29,6 +30,11 @@ export type { InsertLogInput, DailyVisitorRow, PopularMenuRow };
 export interface DbAdapter {
   getStore(storeId: number): Promise<Store | null>;
   createStore(input: NewStoreInput): Promise<Store>;
+  getOrCreateUserByKakaoId(
+    kakaoId: string,
+    nickname: string | null,
+  ): Promise<User>;
+  getStoreByOwner(ownerUserId: number): Promise<Store | null>;
   getStoreMenus(storeId: number): Promise<Menu[]>;
   getMenuPopularity(storeId: number, days: number): Promise<Map<number, number>>;
   getUserRecentLogs(
@@ -117,6 +123,15 @@ export async function getStore(storeId: number) {
 }
 export async function createStore(input: NewStoreInput) {
   return (await getAdapter()).createStore(input);
+}
+export async function getOrCreateUserByKakaoId(
+  kakaoId: string,
+  nickname: string | null,
+) {
+  return (await getAdapter()).getOrCreateUserByKakaoId(kakaoId, nickname);
+}
+export async function getStoreByOwner(ownerUserId: number) {
+  return (await getAdapter()).getStoreByOwner(ownerUserId);
 }
 export async function createMenu(storeId: number, input: MenuInput) {
   return (await getAdapter()).createMenu(storeId, input);

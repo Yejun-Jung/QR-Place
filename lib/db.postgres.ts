@@ -19,7 +19,7 @@ import type {
 export const postgresAdapter: DbAdapter = {
   async getStore(storeId) {
     const { rows } = await sql<Store>`
-      SELECT id, name, kakao_place_id, latitude, longitude
+      SELECT id, name, kakao_place_id, latitude, longitude, owner_user_id
       FROM stores WHERE id = ${storeId}
     `;
     return rows[0] ?? null;
@@ -27,11 +27,37 @@ export const postgresAdapter: DbAdapter = {
 
   async createStore(input) {
     const { rows } = await sql<Store>`
-      INSERT INTO stores (kakao_place_id, name, latitude, longitude)
-      VALUES (${input.kakaoPlaceId}, ${input.name}, ${input.latitude}, ${input.longitude})
-      RETURNING id, name, kakao_place_id, latitude, longitude
+      INSERT INTO stores (kakao_place_id, name, latitude, longitude, owner_user_id)
+      VALUES (${input.kakaoPlaceId}, ${input.name}, ${input.latitude}, ${input.longitude}, ${input.ownerUserId})
+      RETURNING id, name, kakao_place_id, latitude, longitude, owner_user_id
     `;
     return rows[0];
+  },
+
+  async getOrCreateUserByKakaoId(kakaoId, nickname) {
+    const { rows: existing } = await sql<{
+      id: number;
+      kakao_id: string;
+      nickname: string | null;
+    }>`SELECT id, kakao_id, nickname FROM users WHERE kakao_id = ${kakaoId}`;
+    if (existing[0]) return existing[0];
+    const { rows } = await sql<{
+      id: number;
+      kakao_id: string;
+      nickname: string | null;
+    }>`
+      INSERT INTO users (kakao_id, nickname) VALUES (${kakaoId}, ${nickname})
+      RETURNING id, kakao_id, nickname
+    `;
+    return rows[0];
+  },
+
+  async getStoreByOwner(ownerUserId) {
+    const { rows } = await sql<Store>`
+      SELECT id, name, kakao_place_id, latitude, longitude, owner_user_id
+      FROM stores WHERE owner_user_id = ${ownerUserId}
+    `;
+    return rows[0] ?? null;
   },
 
   async getStoreMenus(storeId) {
