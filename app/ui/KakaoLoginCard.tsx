@@ -1,4 +1,5 @@
 import { signIn } from "@/auth";
+import KakaoIcon from "./KakaoIcon";
 
 /**
  * 카카오 로그인 전용 카드. /dashboard, /stores/map 등 "로그인해야 이 화면을
@@ -23,7 +24,7 @@ export default function KakaoLoginCard({
           }}
         >
           <button className="btn kakao" type="submit">
-            <span aria-hidden="true">💬</span> 카카오 로그인
+            <KakaoIcon /> 카카오 로그인
           </button>
         </form>
         <p className="login-caption">간편하게 카카오 계정으로 로그인하세요</p>
