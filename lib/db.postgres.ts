@@ -1,6 +1,9 @@
 /** Vercel Postgres 어댑터 (스펙의 정식 스택). POSTGRES_URL 필요. */
 import { sql } from "@vercel/postgres";
 import type { DbAdapter } from "./db";
+
+/** lib/recommend.ts의 EXCLUDED_POPULARITY_CATEGORIES와 동일하게 유지 */
+const EXCLUDED_POPULARITY_CATEGORIES = ["음료", "주류"];
 import type {
   DailyVisitorRow,
   InsertLogInput,
@@ -111,14 +114,19 @@ export const postgresAdapter: DbAdapter = {
   },
 
   async getMenuPopularity(storeId, days) {
-    const { rows } = await sql<{ menu_id: number; order_count: number }>`
-      SELECT menu_id, COUNT(*)::int AS order_count
-      FROM view_logs
-      WHERE store_id = ${storeId}
-        AND action_type = 'order'
-        AND created_at >= NOW() - ${days} * INTERVAL '1 day'
-      GROUP BY menu_id
-    `;
+    // sql`` 태그드 템플릿은 배열 파라미터를 타입상 못 받아서(Primitive만 허용),
+    // 제외 카테고리 배열은 sql.query()의 $n 파라미터 바인딩으로 넘긴다.
+    const { rows } = await sql.query<{ menu_id: number; order_count: number }>(
+      `SELECT vl.menu_id AS menu_id, COUNT(*)::int AS order_count
+       FROM view_logs vl
+       JOIN menus m ON m.id = vl.menu_id
+       WHERE vl.store_id = $1
+         AND vl.action_type = 'order'
+         AND vl.created_at >= NOW() - $2::int * INTERVAL '1 day'
+         AND COALESCE(m.tags->>'category', '') <> ALL($3::text[])
+       GROUP BY vl.menu_id`,
+      [storeId, days, EXCLUDED_POPULARITY_CATEGORIES],
+    );
     return new Map(rows.map((r) => [r.menu_id, Number(r.order_count)]));
   },
 
@@ -159,17 +167,19 @@ export const postgresAdapter: DbAdapter = {
   },
 
   async getPopularMenus(storeId, days, limit = 10): Promise<PopularMenuRow[]> {
-    const { rows } = await sql<PopularMenuRow>`
-      SELECT m.id AS menu_id, m.name, COUNT(*)::int AS order_count
-      FROM view_logs vl
-      JOIN menus m ON m.id = vl.menu_id
-      WHERE vl.store_id = ${storeId}
-        AND vl.action_type = 'order'
-        AND vl.created_at >= NOW() - ${days} * INTERVAL '1 day'
-      GROUP BY m.id, m.name
-      ORDER BY order_count DESC, m.id
-      LIMIT ${limit}
-    `;
+    const { rows } = await sql.query<PopularMenuRow>(
+      `SELECT m.id AS menu_id, m.name, COUNT(*)::int AS order_count
+       FROM view_logs vl
+       JOIN menus m ON m.id = vl.menu_id
+       WHERE vl.store_id = $1
+         AND vl.action_type = 'order'
+         AND vl.created_at >= NOW() - $2::int * INTERVAL '1 day'
+         AND COALESCE(m.tags->>'category', '') <> ALL($3::text[])
+       GROUP BY m.id, m.name
+       ORDER BY order_count DESC, m.id
+       LIMIT $4`,
+      [storeId, days, EXCLUDED_POPULARITY_CATEGORIES, limit],
+    );
     return rows;
   },
 

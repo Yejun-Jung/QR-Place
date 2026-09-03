@@ -5,6 +5,14 @@
  */
 import type { LogEntry, Menu, MenuTags, RankedMenu } from "./types";
 
+/**
+ * 인기순 집계에서 제외할 카테고리. 음료/주류는 어떤 메뉴를 시키든 거의
+ * 매번 같이 나가서, 그대로 집계하면 실제로 잘 팔리는 메뉴를 가려버린다
+ * (술집류 매장에서 특히). DB의 인기 메뉴 집계 쿼리(getMenuPopularity,
+ * getPopularMenus)에서 이 목록과 동일하게 걸러야 한다.
+ */
+export const EXCLUDED_POPULARITY_CATEGORIES = ["음료", "주류"];
+
 /** 'order' 는 'view' 보다 강한 신호 → 2배 가중치 */
 export const ACTION_WEIGHT: Record<LogEntry["action_type"], number> = {
   view: 1,
