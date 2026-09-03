@@ -1,5 +1,6 @@
-import { auth, signIn } from "@/auth";
+import { auth } from "@/auth";
 import AppHeader from "@/app/ui/AppHeader";
+import KakaoLoginCard from "@/app/ui/KakaoLoginCard";
 import { getVisitedStoresByUser } from "@/lib/db";
 import MapCanvas from "./MapCanvas";
 
@@ -10,22 +11,10 @@ export default async function MyMapPage() {
     return (
       <>
         <AppHeader title="내 맛집 지도" />
-        <div className="section">
-          <p className="muted" style={{ marginTop: 0 }}>
-            카카오 계정으로 로그인하면 지금까지 둘러본 매장을 지도에서 볼 수
-            있어요.
-          </p>
-          <form
-            action={async () => {
-              "use server";
-              await signIn("kakao", { redirectTo: "/stores/map" });
-            }}
-          >
-            <button className="btn" type="submit">
-              카카오로 로그인
-            </button>
-          </form>
-        </div>
+        <KakaoLoginCard
+          message="카카오 계정으로 로그인하면 지금까지 둘러본 매장을 지도에서 볼 수 있어요."
+          redirectTo="/stores/map"
+        />
       </>
     );
   }

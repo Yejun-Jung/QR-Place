@@ -149,11 +149,11 @@ function MenuBoard() {
         >
           <span>카카오로 로그인하고 맞춤 추천 받아보세요</span>
           <button
-            className="btn ghost"
+            className="btn kakao"
             style={{ width: "auto", flexShrink: 0, padding: "6px 14px" }}
             onClick={() => signIn("kakao")}
           >
-            로그인
+            <span aria-hidden="true">💬</span> 로그인
           </button>
         </div>
       )}

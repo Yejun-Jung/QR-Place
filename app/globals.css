@@ -288,6 +288,36 @@ h2.section-title {
   justify-content: space-between;
   align-items: center;
 }
+.btn.kakao {
+  background: #fee500;
+  color: #191919;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+}
+
+/* ── 로그인 카드 ── */
+.login-card {
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: 20px;
+  box-shadow: var(--shadow);
+  padding: 28px 24px 22px;
+  text-align: center;
+}
+.login-card h2 {
+  font-size: 1.15rem;
+  margin: 0 0 10px;
+}
+.login-card .muted {
+  margin: 0 0 20px;
+}
+.login-card .login-caption {
+  margin: 12px 0 0;
+  font-size: 0.78rem;
+  color: var(--muted);
+}
 
 /* ── 하단 고정 장바구니 바 ── */
 .cartbar {
