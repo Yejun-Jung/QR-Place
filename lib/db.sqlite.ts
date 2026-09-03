@@ -171,10 +171,18 @@ type SqlParam = string | number | null;
 
 /** node:sqlite 는 결과를 Record<string, unknown> 로 주므로 헬퍼에서 캐스팅을 모은다. */
 function query<T>(sql: string, ...params: SqlParam[]): T[] {
-  return db().prepare(sql).all(...params) as unknown as T[];
+  // node:sqlite returns null-prototype row objects, which React Server
+  // Components refuse to pass to Client Components as props ("Classes or
+  // null prototypes are not supported"). Spread into plain objects here so
+  // every adapter method returns RSC-safe rows.
+  const rows = db().prepare(sql).all(...params) as Record<string, unknown>[];
+  return rows.map((row) => ({ ...row }) as T);
 }
 function queryOne<T>(sql: string, ...params: SqlParam[]): T {
-  return db().prepare(sql).get(...params) as unknown as T;
+  const row = db().prepare(sql).get(...params) as
+    | Record<string, unknown>
+    | undefined;
+  return (row ? { ...row } : row) as T;
 }
 
 interface MenuRow {
