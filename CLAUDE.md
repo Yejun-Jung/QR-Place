@@ -66,8 +66,8 @@ QR-Place는 유저의 과거 주문/방문 통계를 분석해 취향에 맞는 
 
 - 비로그인 주문: 로그인 없이 메뉴 조회·주문 100% 가능 (입구 장벽 제로)
   - localStorage에 익명 세션 ID 발급 → user_id=NULL로 DB 저장
-- 카카오 로그인 유도 시점: "내 지도에 저장", "룰렛 이벤트" 혜택 버튼 클릭 시
-  - 구현: NextAuth.js + 카카오 OAuth Provider 예정
+- 카카오 로그인 유도 시점: "내 지도에 저장" 클릭 시 (룰렛 이벤트는 아직 화면 없음)
+  - 구현: NextAuth.js + 카카오 OAuth Provider 완료
 
 ---
 
@@ -78,30 +78,31 @@ QR-Place는 유저의 과거 주문/방문 통계를 분석해 취향에 맞는 
 - 역할: 진짜 위도/경도와 카카오 장소 ID를 stores 테이블에 저장
 
 ### 카카오맵 API
-- 사용 위치: 고객의 "내 맛집 지도" 탭
+- 사용 위치: 고객의 "내 맛집 지도" 탭 (`app/stores/map/`)
 - 역할: 지도 띄우기 + stores DB의 좌표로 방문 식당 핀 표시
-- 라이브러리: react-kakao-maps-sdk (아직 미설치)
+- 라이브러리: react-kakao-maps-sdk (설치·연동 완료, `NEXT_PUBLIC_KAKAO_MAP_KEY` 필요)
 
 ---
 
 ## 현재 구현 현황
 
-### 이미 있는 것 (보일러플레이트)
+### 이미 있는 것
 - Next.js 15 + TypeScript 세팅 완료
 - DB 스키마(schema.sql) + 더미 시드(seed.sql) 완성
-- API 라우트 전체 뼈대 (/api/stores, /api/orders, /api/logs)
+- API 라우트 전체 (/api/stores, /api/orders, /api/logs 등)
 - 추천 알고리즘 순수 함수 (lib/recommend.ts)
 - 장바구니 훅 (lib/useCart.ts)
 - SQLite 기본 실행 (npm run dev만으로 DB 없이 작동)
-- 점주 대시보드 기본 틀 (dashboard/[storeId]/page.tsx)
+- 점주용 식당 등록 화면 — 카카오 로컬 API 장소 검색 + 메뉴 CRUD (dashboard/new/, dashboard/[storeId]/menus/)
+- QR 코드 생성 기능 — 테이블별 동적 QR 생성 + 이미지 다운로드 (dashboard/[storeId]/qr/)
+- 카카오 로그인 — NextAuth.js + 카카오 OAuth (auth.ts), 손님 개인화·점주 매장 소유권 연결
+- 카카오맵 연동 — react-kakao-maps-sdk + 내 맛집 지도 페이지 (app/stores/map/, NEXT_PUBLIC_KAKAO_MAP_KEY 필요)
+- 점주 대시보드 — 매출·방문자·인기메뉴 통계 차트(Chart.js) 포함 (dashboard/[storeId]/page.tsx)
+- UI 디자인 리뉴얼 — 손님/점주 화면 전체 색감·레이아웃·인터랙션 정리
 
 ### 아직 없는 것 (구현 필요)
-1. 카카오맵 연동 — react-kakao-maps-sdk 설치 + 내 맛집 지도 페이지 신규 생성
-2. 점주용 식당 등록 화면 — 카카오 로컬 API로 장소 검색 + 메뉴 CRUD UI
-3. QR 코드 생성 기능 — 테이블별 동적 QR 생성 + 이미지 다운로드
-4. 카카오 로그인 — NextAuth.js + 카카오 OAuth 설정
-5. 룰렛 이벤트 UI — recommend.ts의 pickRoulette() 함수를 화면으로 연결
-6. UI 디자인 다듬기 — 모바일 친화적 UI로 개선
+1. 룰렛 이벤트 UI — recommend.ts의 pickRoulette() 함수를 화면으로 연결
+2. Vercel 배포 — Postgres(Neon) 전환 + 환경변수 등록 + 실제 배포
 
 ---
 
@@ -111,11 +112,11 @@ QR-Place는 유저의 과거 주문/방문 통계를 분석해 취향에 맞는 
 |------|------|
 | 1주차 | (완료) 기획 확정, 와이어프레임, DB 스키마 설계 |
 | 2주차 | (완료) Next.js + Vercel 초기 세팅, DB 테이블 생성 |
-| 3주차 | 점주용 화면 구현 (식당/메뉴 등록, QR 생성) |
-| 4주차 | 고객용 모바일 화면 구현 (메뉴판, 추천 배너, 룰렛) |
-| 5주차 | 카카오맵 연동 + 맛집 지도 핀 표시 |
-| 6주차 | 통계 차트(Chart.js) + 카카오 로그인 연동 |
-| 7주차 | 최종 테스트, 버그 수정, 코드 제출 |
+| 3주차 | (완료) 점주용 화면 구현 (식당/메뉴 등록, QR 생성) |
+| 4주차 | 고객용 모바일 화면 구현 (메뉴판·추천 배너 완료, **룰렛 UI 남음**) |
+| 5주차 | (완료) 카카오맵 연동 + 맛집 지도 핀 표시 |
+| 6주차 | (완료) 통계 차트(Chart.js) + 카카오 로그인 연동 |
+| 7주차 | 룰렛 UI, Vercel 배포, 최종 테스트·버그 수정·코드 제출 |
 
 ---
 
@@ -126,7 +127,9 @@ npm run dev
 
 고객 메뉴판 (비로그인): http://localhost:3000/stores/1?table=A1
 고객 메뉴판 (개인화):   http://localhost:3000/stores/1?table=A1&userId=1
-점주 대시보드:           http://localhost:3000/dashboard/1
+내 맛집 지도 (로그인 필요): http://localhost:3000/stores/map
+점주 로그인 → 대시보드:  http://localhost:3000/dashboard
+점주 대시보드 (데모):    http://localhost:3000/dashboard/1
 
 DB 초기화: npm run db:reset
 
