@@ -8,6 +8,11 @@
 import { DatabaseSync } from "node:sqlite";
 import { join } from "node:path";
 import type { DbAdapter } from "./db";
+
+/** lib/recommend.ts의 EXCLUDED_POPULARITY_CATEGORIES와 동일하게 유지 — 여기선
+ * .ts 확장자 없는 값 import가 node --experimental-strip-types(smoke 스크립트)
+ * 에서 안 풀려서 값 자체를 복제해둔다. */
+const EXCLUDED_POPULARITY_CATEGORIES = ["음료", "주류"];
 import type {
   DailyVisitorRow,
   InsertLogInput,
@@ -309,14 +314,18 @@ export const sqliteAdapter: DbAdapter = {
   },
 
   async getMenuPopularity(storeId, days) {
+    const excludePlaceholders = EXCLUDED_POPULARITY_CATEGORIES.map(() => "?").join(",");
     const rows = query<{ menu_id: number; order_count: number }>(
-      `SELECT menu_id, COUNT(*) AS order_count
-       FROM view_logs
-       WHERE store_id = ? AND action_type = 'order'
-         AND created_at >= datetime('now', ?)
-       GROUP BY menu_id`,
+      `SELECT vl.menu_id AS menu_id, COUNT(*) AS order_count
+       FROM view_logs vl
+       JOIN menus m ON m.id = vl.menu_id
+       WHERE vl.store_id = ? AND vl.action_type = 'order'
+         AND vl.created_at >= datetime('now', ?)
+         AND COALESCE(json_extract(m.tags, '$.category'), '') NOT IN (${excludePlaceholders})
+       GROUP BY vl.menu_id`,
       storeId,
       since(days),
+      ...EXCLUDED_POPULARITY_CATEGORIES,
     );
     return new Map(rows.map((r) => [Number(r.menu_id), Number(r.order_count)]));
   },
@@ -378,17 +387,20 @@ export const sqliteAdapter: DbAdapter = {
   },
 
   async getPopularMenus(storeId, days, limit = 10): Promise<PopularMenuRow[]> {
+    const excludePlaceholders = EXCLUDED_POPULARITY_CATEGORIES.map(() => "?").join(",");
     const rows = query<{ menu_id: number; name: string; order_count: number }>(
       `SELECT m.id AS menu_id, m.name, COUNT(*) AS order_count
        FROM view_logs vl
        JOIN menus m ON m.id = vl.menu_id
        WHERE vl.store_id = ? AND vl.action_type = 'order'
          AND vl.created_at >= datetime('now', ?)
+         AND COALESCE(json_extract(m.tags, '$.category'), '') NOT IN (${excludePlaceholders})
        GROUP BY m.id, m.name
        ORDER BY order_count DESC, m.id
        LIMIT ?`,
       storeId,
       since(days),
+      ...EXCLUDED_POPULARITY_CATEGORIES,
       limit,
     );
     return rows.map((r) => ({
