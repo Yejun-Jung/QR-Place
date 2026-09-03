@@ -62,21 +62,45 @@ export default function DashboardPage() {
   const [orders, setOrders] = useState<OrderRow[]>([]);
   const [error, setError] = useState<string | null>(null);
 
+  // 새 주문이 들어오면 자동으로 반영되도록, 대시보드가 열려있는 동안
+  // 5초마다 매출/주문을 다시 불러온다(탭이 백그라운드일 땐 쉼).
   useEffect(() => {
-    setError(null);
-    Promise.all([
-      fetch(`/api/stores/${storeId}/stats?range=${range}d`).then((r) =>
-        r.ok ? r.json() : Promise.reject(new Error("stats " + r.status)),
-      ),
-      fetch(`/api/stores/${storeId}/orders?range=${range}d`).then((r) =>
-        r.ok ? r.json() : Promise.reject(new Error("orders " + r.status)),
-      ),
-    ])
-      .then(([s, o]) => {
-        setStats(s);
-        setOrders(o.orders);
-      })
-      .catch((e) => setError(`불러오기 실패: ${e.message}`));
+    let cancelled = false;
+
+    const load = () => {
+      Promise.all([
+        fetch(`/api/stores/${storeId}/stats?range=${range}d`).then((r) =>
+          r.ok ? r.json() : Promise.reject(new Error("stats " + r.status)),
+        ),
+        fetch(`/api/stores/${storeId}/orders?range=${range}d`).then((r) =>
+          r.ok ? r.json() : Promise.reject(new Error("orders " + r.status)),
+        ),
+      ])
+        .then(([s, o]) => {
+          if (cancelled) return;
+          setStats(s);
+          setOrders(o.orders);
+          setError(null);
+        })
+        .catch((e) => {
+          if (!cancelled) setError(`불러오기 실패: ${e.message}`);
+        });
+    };
+    // 탭이 보일 때만 부른다 — 최초 진입은 무조건 불러오고, 이후 폴링/탭
+    // 복귀 시점엔 백그라운드 탭에서 불필요한 요청 안 하게 건너뛴다.
+    const loadIfVisible = () => {
+      if (!document.hidden) load();
+    };
+
+    load();
+    const interval = setInterval(loadIfVisible, 5000);
+    document.addEventListener("visibilitychange", loadIfVisible);
+
+    return () => {
+      cancelled = true;
+      clearInterval(interval);
+      document.removeEventListener("visibilitychange", loadIfVisible);
+    };
   }, [storeId, range]);
 
   const revenueChart = useMemo(() => {
