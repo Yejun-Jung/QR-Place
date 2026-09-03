@@ -1,6 +1,6 @@
 "use client";
 
-import { Suspense, useEffect, useState, type ComponentType } from "react";
+import { Suspense, useEffect, useRef, useState, type ComponentType } from "react";
 import { useParams, useRouter, useSearchParams } from "next/navigation";
 import AppHeader from "@/app/ui/AppHeader";
 import { CardIcon, CounterIcon, KakaoPayIcon } from "@/app/ui/PaymentIcons";
@@ -72,6 +72,39 @@ function CheckoutView() {
       .then((j) => setOrder(j.order))
       .catch((e) => setError(`주문을 불러오지 못했습니다 (${e.message})`));
   }, [orderId]);
+
+  // popstate 핸들러는 아래에서 한 번만 등록하고 이후 안 바뀌므로, 그때그때
+  // 최신 order를 보게 ref로 참조한다 (order를 deps에 넣으면 로드될 때마다
+  // pushState가 또 실행돼 더미 히스토리가 중복 쌓임).
+  const orderRef = useRef(order);
+  orderRef.current = order;
+
+  // 뒤로가기(브라우저 back, 헤더의 ‹ 버튼 모두 popstate로 들어옴)를 가로채서
+  // 결제를 취소할 건지 확인한다. 취소하면 'pending' 주문을 'cancelled' 처리해서
+  // 대시보드의 결제 대기 목록에서 빠지게 하고 장바구니로 돌려보낸다.
+  useEffect(() => {
+    window.history.pushState(null, "", window.location.href);
+
+    const onPopState = () => {
+      const leave = window.confirm("결제를 취소하시겠습니까?");
+      if (!leave) {
+        window.history.pushState(null, "", window.location.href);
+        return;
+      }
+      if (orderRef.current) {
+        void fetch(`/api/orders/${orderRef.current.id}/cancel`, { method: "POST" });
+      }
+      const p = new URLSearchParams();
+      if (table) p.set("table", table);
+      if (userId) p.set("userId", userId);
+      const qs = p.toString();
+      router.replace(`/stores/${storeId}/cart${qs ? `?${qs}` : ""}`);
+    };
+
+    window.addEventListener("popstate", onPopState);
+    return () => window.removeEventListener("popstate", onPopState);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   const cardValid =
     method !== "card" ||

@@ -64,6 +64,8 @@ export interface DbAdapter {
   getOrder(orderId: number): Promise<Order | null>;
   /** 모의 결제 처리: status='paid' + view_logs 에 주문 로그 적재 (추천 반영) */
   payOrder(orderId: number, method: PaymentMethod): Promise<Order | null>;
+  /** 결제 페이지 이탈 시 취소 — status가 'pending'일 때만 'cancelled'로 전환 */
+  cancelOrder(orderId: number): Promise<Order | null>;
   listOrders(
     storeId: number,
     days: number,
@@ -168,6 +170,9 @@ export async function payOrder(
   method: import("./types").PaymentMethod,
 ) {
   return (await getAdapter()).payOrder(orderId, method);
+}
+export async function cancelOrder(orderId: number) {
+  return (await getAdapter()).cancelOrder(orderId);
 }
 export async function listOrders(storeId: number, days: number, limit = 50) {
   return (await getAdapter()).listOrders(storeId, days, limit);
