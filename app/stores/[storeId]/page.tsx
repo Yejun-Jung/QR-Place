@@ -268,6 +268,7 @@ function MenuBoard() {
 
       {rouletteOpen && (
         <RouletteModal
+          storeId={storeId}
           menus={data.menus}
           onClose={() => setRouletteOpen(false)}
           onAdd={(m) => cart.add({ menuId: m.id, name: m.name, price: m.price })}

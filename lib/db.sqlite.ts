@@ -76,12 +76,19 @@ CREATE TABLE IF NOT EXISTS order_items (
   price    INTEGER NOT NULL,
   quantity INTEGER NOT NULL DEFAULT 1
 );
+CREATE TABLE IF NOT EXISTS roulette_spins (
+  id       INTEGER PRIMARY KEY AUTOINCREMENT,
+  user_id  INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  store_id INTEGER NOT NULL REFERENCES stores(id) ON DELETE CASCADE,
+  spun_at  TEXT NOT NULL DEFAULT (datetime('now'))
+);
 CREATE INDEX IF NOT EXISTS idx_view_logs_user  ON view_logs (user_id, created_at DESC);
 CREATE INDEX IF NOT EXISTS idx_view_logs_store ON view_logs (store_id, created_at DESC);
 CREATE INDEX IF NOT EXISTS idx_view_logs_menu  ON view_logs (menu_id, action_type);
 CREATE INDEX IF NOT EXISTS idx_menus_store     ON menus (store_id);
 CREATE INDEX IF NOT EXISTS idx_orders_store    ON orders (store_id, created_at DESC);
 CREATE INDEX IF NOT EXISTS idx_order_items_ord ON order_items (order_id);
+CREATE INDEX IF NOT EXISTS idx_roulette_spins  ON roulette_spins (user_id, store_id, spun_at DESC);
 `;
 
 const SEED = `
@@ -255,6 +262,24 @@ export const sqliteAdapter: DbAdapter = {
        ORDER BY s.id`,
       userId,
     );
+  },
+
+  async hasSpunToday(userId, storeId) {
+    const row = queryOne<{ n: number } | undefined>(
+      `SELECT COUNT(*) AS n FROM roulette_spins
+       WHERE user_id = ? AND store_id = ? AND date(spun_at) = date('now')`,
+      userId,
+      storeId,
+    );
+    return (row?.n ?? 0) > 0;
+  },
+
+  async recordSpin(userId, storeId) {
+    db()
+      .prepare(
+        "INSERT INTO roulette_spins (user_id, store_id) VALUES (?, ?)",
+      )
+      .run(userId, storeId);
   },
 
   async getStoreMenus(storeId) {

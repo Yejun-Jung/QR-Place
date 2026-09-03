@@ -109,3 +109,36 @@ export function pickRoulette(
   if (pool.length === 0) return null;
   return pool[Math.floor(rng() * pool.length)];
 }
+
+export type RoulettePrizeKind = "miss" | "menu" | "drink" | "discount10";
+
+export interface RoulettePrize {
+  kind: RoulettePrizeKind;
+  label: string;
+  /** 당첨 확률 (합 1) */
+  weight: number;
+}
+
+/** 룰렛 이벤트 고정 상품 4종 — 꽝이 가장 흔하고, 좋은 혜택일수록 희박해지는 가차 확률 */
+export const ROULETTE_PRIZES: RoulettePrize[] = [
+  { kind: "miss", label: "꽝", weight: 0.4 },
+  { kind: "menu", label: "추천 메뉴 무료 증정", weight: 0.3 },
+  { kind: "drink", label: "음료수 서비스", weight: 0.2 },
+  { kind: "discount10", label: "총액 10% 할인", weight: 0.1 },
+];
+
+/**
+ * ROULETTE_PRIZES를 누적 확률 구간으로 나눠 rng 값이 속한 상품을 뽑는다.
+ * rng 주입 가능 → 테스트 결정적.
+ */
+export function pickRoulettePrize(
+  rng: () => number = Math.random,
+): RoulettePrize {
+  const r = rng();
+  let acc = 0;
+  for (const prize of ROULETTE_PRIZES) {
+    acc += prize.weight;
+    if (r < acc) return prize;
+  }
+  return ROULETTE_PRIZES[ROULETTE_PRIZES.length - 1];
+}
