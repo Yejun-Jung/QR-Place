@@ -238,6 +238,17 @@ export const sqliteAdapter: DbAdapter = {
     );
   },
 
+  async getVisitedStoresByUser(userId) {
+    return query<Store>(
+      `SELECT DISTINCT s.id, s.name, s.kakao_place_id, s.latitude, s.longitude, s.owner_user_id
+       FROM stores s
+       JOIN view_logs v ON v.store_id = s.id
+       WHERE v.user_id = ?
+       ORDER BY s.id`,
+      userId,
+    );
+  },
+
   async getStoreMenus(storeId) {
     const rows = query<MenuRow>(
       "SELECT id, store_id, name, price, description, tags FROM menus WHERE store_id = ? ORDER BY id",
