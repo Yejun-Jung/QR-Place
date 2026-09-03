@@ -74,7 +74,7 @@ export default function MapCanvas({ stores }: { stores: Store[] }) {
       {sdkReady && (
         <Map
           center={center}
-          style={{ width: "100%", height: "60vh" }}
+          style={{ width: "100%", height: "calc(100vh - 56px)" }}
           onCreate={setMap}
         >
           {points.map((s) => (

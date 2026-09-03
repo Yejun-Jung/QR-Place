@@ -35,9 +35,9 @@ export default async function MyMapPage() {
   }
 
   return (
-    <>
+    <div className="map-page">
       <AppHeader title="내 맛집 지도" sub={`${stores.length}곳`} />
       <MapCanvas stores={stores} />
-    </>
+    </div>
   );
 }

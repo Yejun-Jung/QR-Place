@@ -159,20 +159,22 @@ function MenuBoard() {
         </div>
       )}
       {session?.user && (
-        <p className="muted" style={{ margin: "8px 16px 0" }}>
-          {session.user.nickname ?? session.user.name ?? "회원"}님, 안녕하세요
-          {" · "}
-          <Link href="/stores/map" className="muted-link">
-            🗺️ 내 맛집 지도
-          </Link>
-          {" · "}
-          <button
-            className="linklike muted-link"
-            onClick={() => signOut({ redirectTo: `/stores/${storeId}${nextQs}` })}
-          >
-            로그아웃
-          </button>
-        </p>
+        <div className="user-row">
+          <span className="muted">
+            {session.user.nickname ?? session.user.name ?? "회원"}님, 안녕하세요
+          </span>
+          <div className="user-actions">
+            <Link href="/stores/map" className="mini-action">
+              🗺️ 내 맛집 지도
+            </Link>
+            <button
+              className="mini-action"
+              onClick={() => signOut({ redirectTo: `/stores/${storeId}${nextQs}` })}
+            >
+              로그아웃
+            </button>
+          </div>
+        </div>
       )}
 
       <button

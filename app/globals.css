@@ -36,21 +36,39 @@ a {
 }
 
 /* 링크처럼 보이는 버튼 (form/onClick 로그아웃 등, <a>는 못 쓰는 자리) */
-.linklike {
+/* ── 닉네임 줄 (지도/로그아웃 버튼) ── */
+.user-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin: 10px 16px 0;
+}
+.user-actions {
+  display: flex;
+  gap: 6px;
+}
+.mini-action {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
   border: none;
-  background: none;
-  padding: 0;
-  font: inherit;
+  border-radius: 999px;
+  padding: 5px 12px;
+  background: var(--brand-soft);
   color: var(--brand-dark);
+  font-size: 0.75rem;
+  font-weight: 600;
+  text-decoration: none;
+  white-space: nowrap;
   cursor: pointer;
 }
-
-/* 굵은 강조 색 대신 주변 문단 톤에 묻어가는 은은한 링크 (닉네임 줄의 지도/로그아웃 등) */
-.muted-link {
-  color: inherit;
-  text-decoration: underline;
-  text-decoration-color: var(--line);
-  text-underline-offset: 2px;
+@media (hover: hover) {
+  .mini-action:hover {
+    background: var(--brand);
+    color: #fff;
+  }
 }
 
 /* 모바일 우선: 앱은 460px 폭 안에 */
@@ -61,6 +79,11 @@ a {
   background: var(--bg);
   padding: 0 0 120px;
   position: relative;
+}
+/* 지도 페이지는 하단 고정 장바구니 바가 없으니, 그걸 위해 비워둔 여백을
+   없애고 지도가 남은 화면을 그대로 채우게 한다 */
+.app:has(.map-page) {
+  padding-bottom: 0;
 }
 
 .app-header {
