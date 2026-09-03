@@ -64,8 +64,9 @@ export interface DbAdapter {
   getOrder(orderId: number): Promise<Order | null>;
   /** 모의 결제 처리: status='paid' + view_logs 에 주문 로그 적재 (추천 반영) */
   payOrder(orderId: number, method: PaymentMethod): Promise<Order | null>;
-  /** 결제 페이지 이탈 시 취소 — status가 'pending'일 때만 'cancelled'로 전환 */
-  cancelOrder(orderId: number): Promise<Order | null>;
+  /** 결제 페이지 이탈 시 취소 — status가 'pending'일 때만 주문(+항목)을 삭제,
+   * 기록을 남기지 않는다. 이미 결제/취소됐거나 없는 주문이면 조용히 무시. */
+  cancelOrder(orderId: number): Promise<void>;
   listOrders(
     storeId: number,
     days: number,

@@ -80,8 +80,8 @@ function CheckoutView() {
   orderRef.current = order;
 
   // 뒤로가기(브라우저 back, 헤더의 ‹ 버튼 모두 popstate로 들어옴)를 가로채서
-  // 결제를 취소할 건지 확인한다. 취소하면 'pending' 주문을 'cancelled' 처리해서
-  // 대시보드의 결제 대기 목록에서 빠지게 하고 장바구니로 돌려보낸다.
+  // 결제를 취소할 건지 확인한다. 취소하면 'pending' 주문을 완전히 삭제해서
+  // 대시보드에 기록도 안 남기고 장바구니로 돌려보낸다.
   useEffect(() => {
     window.history.pushState(null, "", window.location.href);
 
