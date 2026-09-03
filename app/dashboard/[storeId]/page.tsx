@@ -3,6 +3,7 @@
 import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { useParams } from "next/navigation";
+import { signOut } from "next-auth/react";
 import {
   BarElement,
   CategoryScale,
@@ -162,6 +163,12 @@ export default function DashboardPage() {
       <header className="app-header">
         <h1>점주 대시보드</h1>
         <span className="sub">매장 {storeId}</span>
+        <button
+          className="logout"
+          onClick={() => signOut({ redirectTo: "/" })}
+        >
+          로그아웃
+        </button>
       </header>
 
       <div className="seg">
