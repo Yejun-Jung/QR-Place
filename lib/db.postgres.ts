@@ -60,6 +60,17 @@ export const postgresAdapter: DbAdapter = {
     return rows[0] ?? null;
   },
 
+  async getVisitedStoresByUser(userId) {
+    const { rows } = await sql<Store>`
+      SELECT DISTINCT s.id, s.name, s.kakao_place_id, s.latitude, s.longitude, s.owner_user_id
+      FROM stores s
+      JOIN view_logs v ON v.store_id = s.id
+      WHERE v.user_id = ${userId}
+      ORDER BY s.id
+    `;
+    return rows;
+  },
+
   async getStoreMenus(storeId) {
     const { rows } = await sql<Menu>`
       SELECT id, store_id, name, price, description, tags

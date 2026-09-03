@@ -23,4 +23,10 @@ console.log("로그 삽입:", inserted);
 console.log("일별 방문자:", await sqliteAdapter.getDailyVisitors(1, 30));
 console.log("인기 메뉴 TOP3:", await sqliteAdapter.getPopularMenus(1, 30, 3));
 
+const visited = await sqliteAdapter.getVisitedStoresByUser(1);
+console.log(
+  `유저 1이 방문한 매장 ${visited.length}개:`,
+  visited.map((s) => s.name),
+);
+
 console.log("\n✅ SQLite 어댑터 정상");

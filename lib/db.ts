@@ -35,6 +35,7 @@ export interface DbAdapter {
     nickname: string | null,
   ): Promise<User>;
   getStoreByOwner(ownerUserId: number): Promise<Store | null>;
+  getVisitedStoresByUser(userId: number): Promise<Store[]>;
   getStoreMenus(storeId: number): Promise<Menu[]>;
   getMenuPopularity(storeId: number, days: number): Promise<Map<number, number>>;
   getUserRecentLogs(
@@ -132,6 +133,9 @@ export async function getOrCreateUserByKakaoId(
 }
 export async function getStoreByOwner(ownerUserId: number) {
   return (await getAdapter()).getStoreByOwner(ownerUserId);
+}
+export async function getVisitedStoresByUser(userId: number) {
+  return (await getAdapter()).getVisitedStoresByUser(userId);
 }
 export async function createMenu(storeId: number, input: MenuInput) {
   return (await getAdapter()).createMenu(storeId, input);
