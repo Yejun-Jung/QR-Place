@@ -355,6 +355,11 @@ h2.section-title {
   max-width: 428px;
   z-index: 30;
 }
+/* .btn:active 의 transform: scale()이 위 translateX(-50%)를 통째로 덮어써서
+   누르는 순간 가운데 정렬이 풀리고 오른쪽으로 튀던 버그 — 두 transform을 합쳐서 유지 */
+.cartbar:active:not(:disabled) {
+  transform: translateX(-50%) scale(0.97);
+}
 
 /* ── 카트/체크아웃 라인 ── */
 .line {

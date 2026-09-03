@@ -1,8 +1,9 @@
 "use client";
 
-import { Suspense, useEffect, useState } from "react";
+import { Suspense, useEffect, useState, type ComponentType } from "react";
 import { useParams, useRouter, useSearchParams } from "next/navigation";
 import AppHeader from "@/app/ui/AppHeader";
+import { CardIcon, CounterIcon, KakaoPayIcon } from "@/app/ui/PaymentIcons";
 import { useCart, won } from "@/lib/useCart";
 import {
   PAYMENT_METHOD_LABEL,
@@ -11,10 +12,10 @@ import {
 } from "@/lib/types";
 
 const METHODS: PaymentMethod[] = ["card", "kakaopay", "counter"];
-const METHOD_ICON: Record<PaymentMethod, string> = {
-  card: "💳",
-  kakaopay: "🟡",
-  counter: "🧾",
+const METHOD_ICON: Record<PaymentMethod, ComponentType> = {
+  card: CardIcon,
+  kakaopay: KakaoPayIcon,
+  counter: CounterIcon,
 };
 
 function CheckoutView() {
@@ -121,17 +122,20 @@ function CheckoutView() {
 
       <h2 className="section-title">결제 수단</h2>
       <div className="pay-methods">
-        {METHODS.map((m) => (
-          <div
-            key={m}
-            className={`pay-method${method === m ? " active" : ""}`}
-            onClick={() => setMethod(m)}
-          >
-            <span className="radio" />
-            <span>{METHOD_ICON[m]}</span>
-            <span>{PAYMENT_METHOD_LABEL[m]}</span>
-          </div>
-        ))}
+        {METHODS.map((m) => {
+          const Icon = METHOD_ICON[m];
+          return (
+            <div
+              key={m}
+              className={`pay-method${method === m ? " active" : ""}`}
+              onClick={() => setMethod(m)}
+            >
+              <span className="radio" />
+              <Icon />
+              <span>{PAYMENT_METHOD_LABEL[m]}</span>
+            </div>
+          );
+        })}
       </div>
 
       {method === "card" && (
