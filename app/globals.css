@@ -458,15 +458,18 @@ label.field {
   color: var(--muted);
   margin-bottom: 4px;
 }
-input.inp {
+input.inp,
+select.inp {
   width: 100%;
   font: inherit;
   padding: 12px;
   border: 1px solid var(--line);
   border-radius: 10px;
   background: var(--surface);
+  color: var(--text);
 }
-input.inp:focus {
+input.inp:focus,
+select.inp:focus {
   outline: 2px solid var(--brand);
   border-color: var(--brand);
 }
