@@ -216,7 +216,12 @@ export const postgresAdapter: DbAdapter = {
         const m = menuMap.get(Number(it.menuId));
         const qty = Math.max(1, Math.floor(Number(it.quantity) || 0));
         return m
-          ? { menu_id: m.id, name: m.name, price: m.price, quantity: qty }
+          ? {
+              menu_id: m.id,
+              name: it.free ? `${m.name} (무료증정)` : m.name,
+              price: it.free ? 0 : m.price,
+              quantity: qty,
+            }
           : null;
       })
       .filter((x): x is NonNullable<typeof x> => x !== null);
