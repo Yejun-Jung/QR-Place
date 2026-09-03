@@ -44,7 +44,12 @@ export default function MapCanvas({ stores }: { stores: Store[] }) {
     );
   }
   if (error) {
-    return <p className="blurb">지도를 불러오지 못했어요.</p>;
+    console.error("카카오맵 SDK 로드 실패:", error);
+    return (
+      <p className="blurb">
+        지도를 불러오지 못했어요. ({error.message || String(error)})
+      </p>
+    );
   }
   if (loading) {
     return <p className="empty">지도를 불러오는 중…</p>;
