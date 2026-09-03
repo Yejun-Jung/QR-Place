@@ -2,7 +2,7 @@
 
 /// <reference types="kakao.maps.d.ts" />
 
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { CustomOverlayMap, Map, MapMarker, useKakaoLoader } from "react-kakao-maps-sdk";
 import type { Store } from "@/lib/types";
@@ -16,9 +16,13 @@ export default function MapCanvas({ stores }: { stores: Store[] }) {
   const [map, setMap] = useState<kakao.maps.Map | null>(null);
   const [selectedId, setSelectedId] = useState<number | null>(null);
 
-  const points = stores.filter(
-    (s): s is Store & { latitude: number; longitude: number } =>
-      s.latitude != null && s.longitude != null,
+  const points = useMemo(
+    () =>
+      stores.filter(
+        (s): s is Store & { latitude: number; longitude: number } =>
+          s.latitude != null && s.longitude != null,
+      ),
+    [stores],
   );
   const center = averageCenter(points) ?? FALLBACK_CENTER;
   const selected = points.find((s) => s.id === selectedId) ?? null;
