@@ -394,6 +394,7 @@ h2.section-title {
 
 /* ── 카트/체크아웃 라인 ── */
 .line {
+  position: relative;
   display: flex;
   justify-content: space-between;
   align-items: center;
@@ -404,6 +405,29 @@ h2.section-title {
   padding: 14px;
   margin-bottom: 10px;
   box-shadow: var(--shadow);
+}
+.line-remove {
+  position: absolute;
+  top: 6px;
+  right: 6px;
+  width: 20px;
+  height: 20px;
+  border: none;
+  border-radius: 50%;
+  background: var(--bg);
+  color: var(--muted);
+  font-size: 0.85rem;
+  line-height: 1;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+@media (hover: hover) {
+  .line-remove:hover {
+    background: var(--brand-soft);
+    color: var(--brand-dark);
+  }
 }
 .line .name {
   font-weight: 600;
