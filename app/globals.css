@@ -287,6 +287,34 @@ h2.section-title {
   margin-bottom: 16px;
 }
 
+/* ── 메뉴 페어링 추천 ("함께 많이 시켜요") ── */
+.paired {
+  margin-top: 18px;
+  border-top: 1px solid var(--line);
+  padding-top: 14px;
+}
+.paired-title {
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: var(--muted);
+  margin-bottom: 8px;
+}
+.paired-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 0;
+}
+.paired-name {
+  flex: 1;
+  font-size: 0.9rem;
+  font-weight: 600;
+}
+.paired-price {
+  color: var(--muted);
+  font-size: 0.82rem;
+}
+
 /* ── 수량 스텝퍼 ── */
 .stepper {
   display: inline-flex;

@@ -54,6 +54,28 @@ export function topTags(weights: Map<string, number>, n = 3): string[] {
     .map(([token]) => token);
 }
 
+const PRICE_RANGE_LABEL: Record<string, string> = {
+  low: "가성비",
+  mid: "적당한 가격대",
+  high: "프리미엄",
+};
+
+/** 가장 가중치 높은 태그 토큰 하나를 사람이 읽을 문장으로 바꾼다 (나의 취향 리포트용). */
+export function describeTopTag(token: string | undefined): string {
+  if (!token) return "아직 취향을 파악하기엔 데이터가 부족해요.";
+  const [kind, value] = token.split(":");
+  if (kind === "category") return `${value} 메뉴를 가장 즐겨 찾으시네요.`;
+  if (kind === "spicy") {
+    return Number(value) >= 3
+      ? "매운맛을 즐기는 미식가시네요 🌶️"
+      : "순한 맛을 선호하시네요.";
+  }
+  if (kind === "price_range") {
+    return `${PRICE_RANGE_LABEL[value] ?? value} 메뉴를 선호하시네요.`;
+  }
+  return "취향을 분석했어요.";
+}
+
 export interface RecommendOptions {
   /** 상위 몇 개 태그를 매칭에 쓸지 (기본 3, 스펙 "2~3개") */
   topTagCount?: number;

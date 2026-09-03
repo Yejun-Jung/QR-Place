@@ -8,6 +8,9 @@ console.log(`메뉴 ${menus.length}개`);
 const popularity = await sqliteAdapter.getMenuPopularity(1, 30);
 console.log("최근 30일 주문수:", Object.fromEntries(popularity));
 
+const paired = await sqliteAdapter.getPairedMenus(menus[0]?.id ?? 1, 3);
+console.log(`"${menus[0]?.name}"과 함께 자주 시킨 메뉴:`, paired.map((m) => m.name));
+
 const logs = await sqliteAdapter.getUserRecentLogs(1, 30);
 console.log(`유저 1 최근 로그 ${logs.length}건`);
 

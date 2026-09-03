@@ -313,6 +313,33 @@ export const sqliteAdapter: DbAdapter = {
     );
   },
 
+  async getPairedMenus(menuId, limit = 3) {
+    const rows = query<MenuRow & { cnt: number }>(
+      `SELECT m.id, m.store_id, m.name, m.price, m.description, m.tags,
+              SUM(oi2.quantity) AS cnt
+       FROM order_items oi1
+       JOIN order_items oi2 ON oi2.order_id = oi1.order_id AND oi2.menu_id != oi1.menu_id
+       JOIN orders o ON o.id = oi1.order_id AND o.status = 'paid'
+       JOIN menus m ON m.id = oi2.menu_id
+       WHERE oi1.menu_id = ? AND oi2.price > 0
+       GROUP BY m.id
+       ORDER BY cnt DESC
+       LIMIT ?`,
+      menuId,
+      limit,
+    );
+    return rows.map(
+      (r): Menu => ({
+        id: r.id,
+        store_id: r.store_id,
+        name: r.name,
+        price: r.price,
+        description: r.description ?? null,
+        tags: parseTags(r.tags),
+      }),
+    );
+  },
+
   async getMenuPopularity(storeId, days) {
     const excludePlaceholders = EXCLUDED_POPULARITY_CATEGORIES.map(() => "?").join(",");
     const rows = query<{ menu_id: number; order_count: number }>(
