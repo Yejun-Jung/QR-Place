@@ -50,7 +50,7 @@ export default function NewStorePage() {
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error ?? String(res.status));
-      router.push(`/dashboard/${data.store.id}/menus`);
+      router.push(`/dashboard/${data.store.id}`);
     } catch (e) {
       setError(`등록 실패 (${(e as Error).message})`);
       setRegistering(false);
