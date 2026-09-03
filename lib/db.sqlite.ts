@@ -596,6 +596,18 @@ export const sqliteAdapter: DbAdapter = {
     return this.getOrder(orderId);
   },
 
+  async cancelOrder(orderId) {
+    const d = db();
+    const order = await this.getOrder(orderId);
+    if (!order) return null;
+    if (order.status !== "pending") return order; // 이미 결제/취소된 건 그대로 (멱등)
+
+    d.prepare(`UPDATE orders SET status='cancelled' WHERE id=? AND status='pending'`).run(
+      orderId,
+    );
+    return this.getOrder(orderId);
+  },
+
   async listOrders(storeId, days, limit = 50): Promise<OrderSummaryRow[]> {
     const rows = query<{
       id: number;

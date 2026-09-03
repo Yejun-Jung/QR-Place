@@ -293,6 +293,17 @@ export const postgresAdapter: DbAdapter = {
     return this.getOrder(orderId);
   },
 
+  async cancelOrder(orderId) {
+    const order = await this.getOrder(orderId);
+    if (!order) return null;
+    if (order.status !== "pending") return order; // 이미 결제/취소된 건 그대로 (멱등)
+
+    await sql`
+      UPDATE orders SET status = 'cancelled' WHERE id = ${orderId} AND status = 'pending'
+    `;
+    return this.getOrder(orderId);
+  },
+
   async listOrders(storeId, days, limit = 50): Promise<OrderSummaryRow[]> {
     const { rows } = await sql<OrderSummaryRow>`
       SELECT o.id, o.table_number, o.status, o.payment_method, o.total_amount,
