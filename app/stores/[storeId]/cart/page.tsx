@@ -38,6 +38,7 @@ function CartView() {
           items: cart.lines.map((l) => ({
             menuId: l.menuId,
             quantity: l.quantity,
+            free: l.free,
           })),
         }),
       });

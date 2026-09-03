@@ -121,10 +121,10 @@ export interface RoulettePrize {
 
 /** 룰렛 이벤트 고정 상품 4종 — 꽝이 가장 흔하고, 좋은 혜택일수록 희박해지는 가차 확률 */
 export const ROULETTE_PRIZES: RoulettePrize[] = [
-  { kind: "miss", label: "꽝", weight: 0.4 },
-  { kind: "menu", label: "추천 메뉴 무료 증정", weight: 0.3 },
-  { kind: "drink", label: "음료수 서비스", weight: 0.2 },
-  { kind: "discount10", label: "총액 10% 할인", weight: 0.1 },
+  { kind: "miss", label: "꽝", weight: 0.5 },
+  { kind: "drink", label: "음료수 서비스", weight: 0.25 },
+  { kind: "discount10", label: "총액 10% 할인", weight: 0.15 },
+  { kind: "menu", label: "추천 메뉴 무료 증정", weight: 0.1 },
 ];
 
 /**

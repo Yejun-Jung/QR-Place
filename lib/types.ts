@@ -134,7 +134,8 @@ export interface NewOrderInput {
   storeId: number;
   userId: number | null;
   tableNumber: string | null;
-  items: { menuId: number; quantity: number }[];
+  /** free: 룰렛 무료증정 당첨 항목 — 서버가 가격을 0원으로 스냅샷 */
+  items: { menuId: number; quantity: number; free?: boolean }[];
 }
 
 export interface RevenueRow {
@@ -159,4 +160,6 @@ export interface CartLine {
   name: string;
   price: number;
   quantity: number;
+  /** 룰렛 무료증정으로 담긴 항목 — 주문 생성 시 서버가 0원으로 처리 */
+  free?: boolean;
 }

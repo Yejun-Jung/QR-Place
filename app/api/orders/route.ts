@@ -31,7 +31,11 @@ export async function POST(req: NextRequest) {
   const normalizedItems = items
     .map((it) => {
       const rec = it as Record<string, unknown>;
-      return { menuId: Number(rec.menuId), quantity: Number(rec.quantity) };
+      return {
+        menuId: Number(rec.menuId),
+        quantity: Number(rec.quantity),
+        free: Boolean(rec.free),
+      };
     })
     .filter((it) => Number.isFinite(it.menuId) && it.quantity > 0);
 

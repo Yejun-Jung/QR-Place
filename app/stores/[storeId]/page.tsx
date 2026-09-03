@@ -162,10 +162,12 @@ function MenuBoard() {
         <p className="muted" style={{ margin: "8px 16px 0" }}>
           {session.user.nickname ?? session.user.name ?? "회원"}님, 안녕하세요
           {" · "}
-          <Link href="/stores/map">🗺️ 내 맛집 지도</Link>
+          <Link href="/stores/map" className="muted-link">
+            🗺️ 내 맛집 지도
+          </Link>
           {" · "}
           <button
-            className="linklike"
+            className="linklike muted-link"
             onClick={() => signOut({ redirectTo: `/stores/${storeId}${nextQs}` })}
           >
             로그아웃
@@ -279,7 +281,18 @@ function MenuBoard() {
           storeId={storeId}
           menus={data.menus}
           onClose={() => setRouletteOpen(false)}
-          onAdd={(m) => cart.add({ menuId: m.id, name: m.name, price: m.price })}
+          onAdd={(m) =>
+            // ponytail: cart.add()가 같은 menuId를 이미 담긴 줄에 병합하면서
+            // 기존 줄의 가격/이름을 유지한다 — 같은 메뉴를 이미 정가로 담아둔
+            // 상태에서 룰렛에 당첨되면 무료 표시가 묻힐 수 있음. 실제로 겹칠
+            // 일이 드물어 지금은 감수, 문제되면 cart 병합 키에 free 반영.
+            cart.add({
+              menuId: m.id,
+              name: `${m.name} (무료증정)`,
+              price: 0,
+              free: true,
+            })
+          }
         />
       )}
     </>

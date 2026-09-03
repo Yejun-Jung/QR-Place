@@ -100,15 +100,15 @@ describe("pickRoulette", () => {
 });
 
 describe("pickRoulettePrize", () => {
-  it("가중치 누적 순서대로 rng 구간에 맞는 상품을 뽑는다 (꽝 40% / 추천메뉴 30% / 음료수 20% / 할인 10%)", () => {
+  it("가중치 누적 순서대로 rng 구간에 맞는 상품을 뽑는다 (꽝 50% / 음료수 25% / 할인 15% / 추천메뉴 10%)", () => {
     expect(pickRoulettePrize(() => 0).kind).toBe("miss");
-    expect(pickRoulettePrize(() => 0.39).kind).toBe("miss");
-    expect(pickRoulettePrize(() => 0.4).kind).toBe("menu");
-    expect(pickRoulettePrize(() => 0.69).kind).toBe("menu");
-    expect(pickRoulettePrize(() => 0.7).kind).toBe("drink");
-    expect(pickRoulettePrize(() => 0.89).kind).toBe("drink");
-    expect(pickRoulettePrize(() => 0.9).kind).toBe("discount10");
-    expect(pickRoulettePrize(() => 0.999999).kind).toBe("discount10");
+    expect(pickRoulettePrize(() => 0.49).kind).toBe("miss");
+    expect(pickRoulettePrize(() => 0.5).kind).toBe("drink");
+    expect(pickRoulettePrize(() => 0.74).kind).toBe("drink");
+    expect(pickRoulettePrize(() => 0.75).kind).toBe("discount10");
+    expect(pickRoulettePrize(() => 0.89).kind).toBe("discount10");
+    expect(pickRoulettePrize(() => 0.9).kind).toBe("menu");
+    expect(pickRoulettePrize(() => 0.999999).kind).toBe("menu");
   });
 
   it("ROULETTE_PRIZES 가중치 합은 1이다", () => {

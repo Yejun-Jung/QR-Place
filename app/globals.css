@@ -45,6 +45,14 @@ a {
   cursor: pointer;
 }
 
+/* 굵은 강조 색 대신 주변 문단 톤에 묻어가는 은은한 링크 (닉네임 줄의 지도/로그아웃 등) */
+.muted-link {
+  color: inherit;
+  text-decoration: underline;
+  text-decoration-color: var(--line);
+  text-underline-offset: 2px;
+}
+
 /* 모바일 우선: 앱은 460px 폭 안에 */
 .app {
   max-width: 460px;
