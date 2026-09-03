@@ -11,6 +11,19 @@ import {
   type PaymentMethod,
 } from "@/lib/types";
 
+/** 카드번호 앞 8자리(공백 제외)만 숫자 노출, 나머지는 • 로 가림 */
+function maskCardNo(formatted: string): string {
+  let digitIdx = 0;
+  return formatted
+    .split("")
+    .map((ch) => {
+      if (ch === " ") return ch;
+      digitIdx++;
+      return digitIdx <= 8 ? ch : "•";
+    })
+    .join("");
+}
+
 const MONTH_OPTIONS = Array.from({ length: 12 }, (_, i) =>
   String(i + 1).padStart(2, "0"),
 );
@@ -153,19 +166,23 @@ function CheckoutView() {
             <label className="field">카드 번호</label>
             <input
               className="inp"
-              type="password"
               inputMode="numeric"
               placeholder="0000 0000 0000 0000"
-              value={cardNo}
+              value={maskCardNo(cardNo)}
               maxLength={19}
-              onChange={(e) =>
-                setCardNo(
-                  e.target.value
-                    .replace(/\D/g, "")
-                    .slice(0, 16)
-                    .replace(/(\d{4})(?=\d)/g, "$1 "),
-                )
-              }
+              onChange={(e) => {
+                const shown = e.target.value;
+                const displayed = maskCardNo(cardNo);
+                // ponytail: 끝에서 추가/삭제하는 일반적인 입력만 지원(붙여넣기·중간
+                // 수정은 미지원) — 뒤 8자리가 가려진 표시값을 그대로 다시 파싱할 수
+                // 없어서, 이전 표시값과의 길이 차이로 추가/삭제만 감지한다.
+                const digits = cardNo.replace(/\s/g, "");
+                const next =
+                  shown.length > displayed.length
+                    ? (digits + shown.slice(displayed.length).replace(/\D/g, "")).slice(0, 16)
+                    : digits.slice(0, -1);
+                setCardNo(next.replace(/(\d{4})(?=\d)/g, "$1 "));
+              }}
             />
           </div>
           <div className="two">
