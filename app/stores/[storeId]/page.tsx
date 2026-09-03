@@ -150,6 +150,8 @@ function MenuBoard() {
       {session?.user && (
         <p className="muted" style={{ margin: "8px 16px 0" }}>
           {session.user.nickname ?? session.user.name ?? "회원"}님, 안녕하세요
+          {" · "}
+          <Link href="/stores/map">🗺️ 내 맛집 지도</Link>
         </p>
       )}
 
