@@ -62,9 +62,18 @@ CREATE TABLE IF NOT EXISTS order_items (
   quantity INTEGER NOT NULL DEFAULT 1
 );
 
+-- 룰렛 이벤트: 유저×매장당 하루 1회 제한 확인용 스핀 기록
+CREATE TABLE IF NOT EXISTS roulette_spins (
+  id       SERIAL PRIMARY KEY,
+  user_id  INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  store_id INTEGER NOT NULL REFERENCES stores(id) ON DELETE CASCADE,
+  spun_at  TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
 CREATE INDEX IF NOT EXISTS idx_view_logs_user  ON view_logs (user_id, created_at DESC);
 CREATE INDEX IF NOT EXISTS idx_view_logs_store ON view_logs (store_id, created_at DESC);
 CREATE INDEX IF NOT EXISTS idx_view_logs_menu  ON view_logs (menu_id, action_type);
 CREATE INDEX IF NOT EXISTS idx_menus_store     ON menus (store_id);
 CREATE INDEX IF NOT EXISTS idx_orders_store    ON orders (store_id, created_at DESC);
 CREATE INDEX IF NOT EXISTS idx_order_items_ord ON order_items (order_id);
+CREATE INDEX IF NOT EXISTS idx_roulette_spins  ON roulette_spins (user_id, store_id, spun_at DESC);

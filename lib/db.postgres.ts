@@ -71,6 +71,21 @@ export const postgresAdapter: DbAdapter = {
     return rows;
   },
 
+  async hasSpunToday(userId, storeId) {
+    const { rows } = await sql<{ n: number }>`
+      SELECT COUNT(*)::int AS n FROM roulette_spins
+      WHERE user_id = ${userId} AND store_id = ${storeId}
+        AND spun_at::date = CURRENT_DATE
+    `;
+    return (rows[0]?.n ?? 0) > 0;
+  },
+
+  async recordSpin(userId, storeId) {
+    await sql`
+      INSERT INTO roulette_spins (user_id, store_id) VALUES (${userId}, ${storeId})
+    `;
+  },
+
   async getStoreMenus(storeId) {
     const { rows } = await sql<Menu>`
       SELECT id, store_id, name, price, description, tags

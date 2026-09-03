@@ -29,4 +29,8 @@ console.log(
   visited.map((s) => s.name),
 );
 
+console.log("룰렛 오늘 돌렸는지(가입 전):", await sqliteAdapter.hasSpunToday(1, 1));
+await sqliteAdapter.recordSpin(1, 1);
+console.log("룰렛 오늘 돌렸는지(기록 후):", await sqliteAdapter.hasSpunToday(1, 1));
+
 console.log("\n✅ SQLite 어댑터 정상");

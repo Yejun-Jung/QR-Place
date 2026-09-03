@@ -36,6 +36,9 @@ export interface DbAdapter {
   ): Promise<User>;
   getStoreByOwner(ownerUserId: number): Promise<Store | null>;
   getVisitedStoresByUser(userId: number): Promise<Store[]>;
+  /** 룰렛 이벤트: 유저×매장 기준 오늘 이미 돌렸는지 */
+  hasSpunToday(userId: number, storeId: number): Promise<boolean>;
+  recordSpin(userId: number, storeId: number): Promise<void>;
   getStoreMenus(storeId: number): Promise<Menu[]>;
   getMenuPopularity(storeId: number, days: number): Promise<Map<number, number>>;
   getUserRecentLogs(
@@ -136,6 +139,12 @@ export async function getStoreByOwner(ownerUserId: number) {
 }
 export async function getVisitedStoresByUser(userId: number) {
   return (await getAdapter()).getVisitedStoresByUser(userId);
+}
+export async function hasSpunToday(userId: number, storeId: number) {
+  return (await getAdapter()).hasSpunToday(userId, storeId);
+}
+export async function recordSpin(userId: number, storeId: number) {
+  return (await getAdapter()).recordSpin(userId, storeId);
 }
 export async function createMenu(storeId: number, input: MenuInput) {
   return (await getAdapter()).createMenu(storeId, input);

@@ -3,8 +3,10 @@ import type { LogEntry, Menu } from "../types";
 import {
   computeTagWeights,
   pickRoulette,
+  pickRoulettePrize,
   popularMenus,
   recommendMenus,
+  ROULETTE_PRIZES,
   tagTokens,
   topTags,
 } from "../recommend";
@@ -94,5 +96,23 @@ describe("pickRoulette", () => {
     expect(pickRoulette(ranked, 3, () => 0)!.id).toBe(ranked[0].id);
     expect(pickRoulette(ranked, 3, () => 0.99)!.id).toBe(ranked[2].id);
     expect(pickRoulette([], 3)).toBeNull();
+  });
+});
+
+describe("pickRoulettePrize", () => {
+  it("가중치 누적 순서대로 rng 구간에 맞는 상품을 뽑는다 (꽝 40% / 추천메뉴 30% / 음료수 20% / 할인 10%)", () => {
+    expect(pickRoulettePrize(() => 0).kind).toBe("miss");
+    expect(pickRoulettePrize(() => 0.39).kind).toBe("miss");
+    expect(pickRoulettePrize(() => 0.4).kind).toBe("menu");
+    expect(pickRoulettePrize(() => 0.69).kind).toBe("menu");
+    expect(pickRoulettePrize(() => 0.7).kind).toBe("drink");
+    expect(pickRoulettePrize(() => 0.89).kind).toBe("drink");
+    expect(pickRoulettePrize(() => 0.9).kind).toBe("discount10");
+    expect(pickRoulettePrize(() => 0.999999).kind).toBe("discount10");
+  });
+
+  it("ROULETTE_PRIZES 가중치 합은 1이다", () => {
+    const sum = ROULETTE_PRIZES.reduce((s, p) => s + p.weight, 0);
+    expect(sum).toBeCloseTo(1);
   });
 });
