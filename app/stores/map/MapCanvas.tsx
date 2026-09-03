@@ -51,12 +51,25 @@ export default function MapCanvas({ stores }: { stores: Store[] }) {
       <Script
         src={`https://dapi.kakao.com/v2/maps/sdk.js?appkey=${encodeURIComponent(appkey)}&autoload=false`}
         strategy="afterInteractive"
-        onLoad={() => {
-          kakao.maps.load(() => setSdkReady(true));
+        onReady={() => {
+          if (typeof kakao === "undefined" || !kakao?.maps) {
+            setSdkError(true);
+            return;
+          }
+          try {
+            kakao.maps.load(() => setSdkReady(true));
+          } catch {
+            setSdkError(true);
+          }
         }}
         onError={() => setSdkError(true)}
       />
-      {sdkError && <p className="blurb">지도를 불러오지 못했어요.</p>}
+      {sdkError && (
+        <p className="blurb">
+          지도를 불러오지 못했어요. 카카오 개발자 콘솔에서 이 도메인이 JS SDK
+          도메인으로 등록됐는지 확인해주세요.
+        </p>
+      )}
       {!sdkError && !sdkReady && <p className="empty">지도를 불러오는 중…</p>}
       {sdkReady && (
         <Map

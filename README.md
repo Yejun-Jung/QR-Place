@@ -56,6 +56,17 @@ npm run dev
 
 `DB_DRIVER=sqlite` 를 주면 `POSTGRES_URL` 이 있어도 SQLite 로 강제할 수 있다.
 
+## 카카오맵 (내 맛집 지도)
+
+`/stores/map` (카카오 로그인 후 방문 매장을 지도 핀으로 표시)을 쓰려면
+`.env.local` 에 `NEXT_PUBLIC_KAKAO_MAP_KEY` 를 설정해야 한다 — 카카오 개발자
+콘솔 앱의 **JavaScript 키**이며, 장소 검색에 쓰는 `KAKAO_REST_API_KEY` 와는
+다른 키다. 또한 그 키를 서비스할 도메인(`http://localhost:3000`, 배포된
+Vercel 도메인)을 콘솔의 **JS SDK 도메인**으로 등록해야 지도가 뜬다 —
+미등록 시 로딩이 도메인 거부 에러로 실패한다. `NEXT_PUBLIC_*` 값은 Next.js
+빌드 타임에 번들에 박히므로, Vercel 배포 시 빌드 실행 전에 설정돼 있어야
+한다.
+
 ## 폴더 구조
 
 ```
@@ -66,6 +77,7 @@ lib/
   recommend.ts                 태그 가중치 계산 + 정렬 (순수 함수, 스펙 4장)
   blurb.ts                     자연어 추천 문구 (스펙 7, 규칙 기반)
   useCart.ts                   장바구니 훅 (localStorage, 테이블 단위)
+  mapView.ts                   카카오맵 중심좌표 계산 (순수 함수)
   db.ts                        드라이버 선택 + 공용 인터페이스(DbAdapter)
   db.sqlite.ts                 SQLite 어댑터 (기본)
   db.postgres.ts               Vercel Postgres 어댑터
@@ -84,6 +96,8 @@ app/
   stores/[storeId]/cart/page.tsx              장바구니
   stores/[storeId]/checkout/page.tsx          결제 (수단 선택·카드입력)
   stores/[storeId]/orders/[orderId]/page.tsx  주문 완료
+  stores/map/page.tsx                         내 맛집 지도 (로그인 후 방문 매장 핀)
+  stores/map/MapCanvas.tsx                    카카오맵 SDK 로딩 + 마커/오버레이 렌더
   dashboard/[storeId]/page.tsx                점주 대시보드 (Chart.js)
 scripts/
   db.mjs                       Postgres schema+seed 실행기

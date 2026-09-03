@@ -94,14 +94,14 @@ QR-Place는 유저의 과거 주문/방문 통계를 분석해 취향에 맞는 
 - 장바구니 훅 (lib/useCart.ts)
 - SQLite 기본 실행 (npm run dev만으로 DB 없이 작동)
 - 점주 대시보드 기본 틀 (dashboard/[storeId]/page.tsx)
+- 카카오맵 연동 — react-kakao-maps-sdk + 내 맛집 지도 페이지 (app/stores/map/, NEXT_PUBLIC_KAKAO_MAP_KEY 필요)
 
 ### 아직 없는 것 (구현 필요)
-1. 카카오맵 연동 — react-kakao-maps-sdk 설치 + 내 맛집 지도 페이지 신규 생성
-2. 점주용 식당 등록 화면 — 카카오 로컬 API로 장소 검색 + 메뉴 CRUD UI
-3. QR 코드 생성 기능 — 테이블별 동적 QR 생성 + 이미지 다운로드
-4. 카카오 로그인 — NextAuth.js + 카카오 OAuth 설정
-5. 룰렛 이벤트 UI — recommend.ts의 pickRoulette() 함수를 화면으로 연결
-6. UI 디자인 다듬기 — 모바일 친화적 UI로 개선
+1. 점주용 식당 등록 화면 — 카카오 로컬 API로 장소 검색 + 메뉴 CRUD UI
+2. QR 코드 생성 기능 — 테이블별 동적 QR 생성 + 이미지 다운로드
+3. 카카오 로그인 — NextAuth.js + 카카오 OAuth 설정
+4. 룰렛 이벤트 UI — recommend.ts의 pickRoulette() 함수를 화면으로 연결
+5. UI 디자인 다듬기 — 모바일 친화적 UI로 개선
 
 ---
 
