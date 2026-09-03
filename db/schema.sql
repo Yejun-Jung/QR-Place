@@ -13,8 +13,11 @@ CREATE TABLE IF NOT EXISTS stores (
   kakao_place_id VARCHAR,
   name           VARCHAR NOT NULL,
   latitude       DOUBLE PRECISION,
-  longitude      DOUBLE PRECISION
+  longitude      DOUBLE PRECISION,
+  owner_user_id  INTEGER REFERENCES users(id)
 );
+
+ALTER TABLE stores ADD COLUMN IF NOT EXISTS owner_user_id INTEGER REFERENCES users(id);
 
 CREATE TABLE IF NOT EXISTS menus (
   id          SERIAL PRIMARY KEY,

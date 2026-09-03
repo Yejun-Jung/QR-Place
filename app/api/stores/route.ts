@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import { auth } from "@/auth";
 import { createStore } from "@/lib/db";
 import type { NewStoreInput } from "@/lib/types";
 
@@ -36,7 +37,14 @@ export async function POST(req: NextRequest) {
     );
   }
 
-  const input: NewStoreInput = { name, kakaoPlaceId, latitude, longitude };
+  const session = await auth();
+  const input: NewStoreInput = {
+    name,
+    kakaoPlaceId,
+    latitude,
+    longitude,
+    ownerUserId: session?.user?.id ?? null,
+  };
 
   try {
     const store = await createStore(input);

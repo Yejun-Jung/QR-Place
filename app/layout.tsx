@@ -1,6 +1,7 @@
 import type { Metadata, Viewport } from "next";
 import type { ReactNode } from "react";
 import { Noto_Sans_KR } from "next/font/google";
+import { SessionProvider } from "next-auth/react";
 import "./globals.css";
 
 const notoSansKR = Noto_Sans_KR({
@@ -23,7 +24,9 @@ export const viewport: Viewport = {
 export default function RootLayout({ children }: { children: ReactNode }) {
   return (
     <html lang="ko" className={notoSansKR.variable}>
-      <body>{children}</body>
+      <body>
+        <SessionProvider>{children}</SessionProvider>
+      </body>
     </html>
   );
 }
