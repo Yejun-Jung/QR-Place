@@ -148,6 +148,10 @@ h2.section-title {
   font-weight: 600;
 }
 
+.menu-section {
+  scroll-margin-top: 104px; /* 고정(sticky) 헤더 + 카테고리 칩 높이만큼, 스크롤 시 안 가리게 */
+}
+
 .muted {
   color: var(--muted);
   font-size: 0.85rem;
@@ -166,6 +170,10 @@ h2.section-title {
 
 /* ── 카테고리 칩 ── */
 .chips {
+  position: sticky;
+  top: 53px; /* .app-header 높이 바로 아래 */
+  z-index: 19;
+  background: var(--bg);
   display: flex;
   gap: 8px;
   overflow-x: auto;
