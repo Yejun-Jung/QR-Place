@@ -1,9 +1,31 @@
 import { NextRequest, NextResponse } from "next/server";
-import { deleteMenu, updateMenu } from "@/lib/db";
+import { deleteMenu, getPairedMenus, updateMenu } from "@/lib/db";
 import type { MenuInput, MenuTags } from "@/lib/types";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
+
+/**
+ * GET /api/stores/[storeId]/menus/[menuId] → 함께 자주 주문된 메뉴 (페어링 추천)
+ */
+export async function GET(
+  _req: NextRequest,
+  { params }: { params: Promise<{ menuId: string }> },
+) {
+  const { menuId: menuIdRaw } = await params;
+  const menuId = Number(menuIdRaw);
+  if (!Number.isFinite(menuId)) {
+    return NextResponse.json({ error: "invalid menuId" }, { status: 400 });
+  }
+
+  try {
+    const paired = await getPairedMenus(menuId, 3);
+    return NextResponse.json({ paired });
+  } catch (err) {
+    console.error("GET /api/stores/[storeId]/menus/[menuId] failed", err);
+    return NextResponse.json({ error: "db error" }, { status: 500 });
+  }
+}
 
 /**
  * PUT /api/stores/[storeId]/menus/[menuId]

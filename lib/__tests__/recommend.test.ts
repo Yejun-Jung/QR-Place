@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 import type { LogEntry, Menu } from "../types";
 import {
   computeTagWeights,
+  describeTopTag,
   pickRoulette,
   pickRoulettePrize,
   popularMenus,
@@ -87,6 +88,16 @@ describe("recommendMenus", () => {
     const ranked = popularMenus(menus, popularity);
     expect(ranked.map((m) => m.id)).toEqual([3, 4, 1, 2]);
     expect(ranked.every((m) => m.recommendScore === 0)).toBe(true);
+  });
+});
+
+describe("describeTopTag", () => {
+  it("태그 종류별로 다른 문장을 만든다", () => {
+    expect(describeTopTag("category:치킨")).toContain("치킨");
+    expect(describeTopTag("spicy:4")).toContain("매운맛");
+    expect(describeTopTag("spicy:1")).toContain("순한 맛");
+    expect(describeTopTag("price_range:high")).toContain("프리미엄");
+    expect(describeTopTag(undefined)).toContain("데이터가 부족");
   });
 });
 

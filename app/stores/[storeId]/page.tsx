@@ -11,7 +11,7 @@ import Link from "next/link";
 import { useParams, useSearchParams } from "next/navigation";
 import { signIn, signOut, useSession } from "next-auth/react";
 import { useCart, won } from "@/lib/useCart";
-import type { RankedMenu, Store } from "@/lib/types";
+import type { Menu, RankedMenu, Store } from "@/lib/types";
 import RouletteModal from "./RouletteModal";
 import KakaoIcon from "@/app/ui/KakaoIcon";
 
@@ -40,6 +40,7 @@ function MenuBoard() {
   const [activeCat, setActiveCat] = useState<string>("전체");
   const [openMenu, setOpenMenu] = useState<RankedMenu | null>(null);
   const [sheetQty, setSheetQty] = useState(1);
+  const [paired, setPaired] = useState<Menu[]>([]);
   const [rouletteOpen, setRouletteOpen] = useState(false);
 
   // table/userId 를 유지한 쿼리스트링
@@ -82,7 +83,12 @@ function MenuBoard() {
   const openSheet = (m: RankedMenu) => {
     setOpenMenu(m);
     setSheetQty(1);
+    setPaired([]);
     logView(m.id);
+    fetch(`/api/stores/${storeId}/menus/${m.id}`)
+      .then((r) => (r.ok ? r.json() : Promise.reject()))
+      .then((d) => setPaired(d.paired ?? []))
+      .catch(() => {}); // 페어링은 부가 정보라 실패해도 시트는 그대로 사용 가능
   };
 
   const addToCart = () => {
@@ -172,6 +178,9 @@ function MenuBoard() {
             {session.user.nickname ?? session.user.name ?? "회원"}님, 안녕하세요
           </span>
           <div className="user-actions">
+            <Link href="/stores/taste" className="mini-action">
+              🍽️ 나의 취향
+            </Link>
             <Link href="/stores/map" className="mini-action">
               🗺️ 내 맛집 지도
             </Link>
@@ -290,6 +299,24 @@ function MenuBoard() {
             <button className="btn" onClick={addToCart}>
               장바구니에 담기
             </button>
+
+            {paired.length > 0 && (
+              <div className="paired">
+                <div className="paired-title">🍽️ 이 메뉴와 함께 많이 시켜요</div>
+                {paired.map((p) => (
+                  <div className="paired-row" key={p.id}>
+                    <span className="paired-name">{p.name}</span>
+                    <span className="paired-price">{won(p.price)}</span>
+                    <button
+                      className="mini-action"
+                      onClick={() => cart.add({ menuId: p.id, name: p.name, price: p.price })}
+                    >
+                      담기
+                    </button>
+                  </div>
+                ))}
+              </div>
+            )}
           </div>
         </div>
       )}

@@ -113,6 +113,21 @@ export const postgresAdapter: DbAdapter = {
     return rows;
   },
 
+  async getPairedMenus(menuId, limit = 3) {
+    const { rows } = await sql<Menu>`
+      SELECT m.id, m.store_id, m.name, m.price, m.description, m.tags
+      FROM order_items oi1
+      JOIN order_items oi2 ON oi2.order_id = oi1.order_id AND oi2.menu_id <> oi1.menu_id
+      JOIN orders o ON o.id = oi1.order_id AND o.status = 'paid'
+      JOIN menus m ON m.id = oi2.menu_id
+      WHERE oi1.menu_id = ${menuId} AND oi2.price > 0
+      GROUP BY m.id
+      ORDER BY SUM(oi2.quantity) DESC
+      LIMIT ${limit}
+    `;
+    return rows;
+  },
+
   async getMenuPopularity(storeId, days) {
     // sql`` 태그드 템플릿은 배열 파라미터를 타입상 못 받아서(Primitive만 허용),
     // 제외 카테고리 배열은 sql.query()의 $n 파라미터 바인딩으로 넘긴다.

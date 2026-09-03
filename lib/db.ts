@@ -40,6 +40,8 @@ export interface DbAdapter {
   hasSpunToday(userId: number, storeId: number): Promise<boolean>;
   recordSpin(userId: number, storeId: number): Promise<void>;
   getStoreMenus(storeId: number): Promise<Menu[]>;
+  /** 이 메뉴와 같은 결제완료 주문에 가장 자주 같이 담긴 메뉴 (룰렛 무료증정 제외) */
+  getPairedMenus(menuId: number, limit?: number): Promise<Menu[]>;
   getMenuPopularity(storeId: number, days: number): Promise<Map<number, number>>;
   getUserRecentLogs(
     userId: number,
@@ -104,6 +106,9 @@ export async function getStoreMenus(storeId: number) {
 }
 export async function getMenuPopularity(storeId: number, days: number) {
   return (await getAdapter()).getMenuPopularity(storeId, days);
+}
+export async function getPairedMenus(menuId: number, limit = 3) {
+  return (await getAdapter()).getPairedMenus(menuId, limit);
 }
 export async function getUserRecentLogs(
   userId: number,
