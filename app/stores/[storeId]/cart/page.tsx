@@ -78,8 +78,34 @@ function CartView() {
       ) : (
         <>
           <div className="section" style={{ paddingBottom: 0 }}>
+            <div
+              style={{
+                display: "flex",
+                justifyContent: "flex-end",
+                marginBottom: 4,
+              }}
+            >
+              <button
+                className="mini-action"
+                onClick={() => {
+                  if (window.confirm("장바구니를 전부 비우시겠습니까?")) {
+                    cart.clear();
+                  }
+                }}
+              >
+                전체삭제
+              </button>
+            </div>
+
             {cart.lines.map((l) => (
               <div className="line" key={l.menuId}>
+                <button
+                  className="line-remove"
+                  aria-label={`${l.name} 삭제`}
+                  onClick={() => cart.remove(l.menuId)}
+                >
+                  ×
+                </button>
                 <div>
                   <div className="name">{l.name}</div>
                   <div className="unit">{won(l.price)} / 개</div>
