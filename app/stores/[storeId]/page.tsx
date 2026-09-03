@@ -9,7 +9,7 @@ import {
 } from "react";
 import Link from "next/link";
 import { useParams, useSearchParams } from "next/navigation";
-import { signIn, useSession } from "next-auth/react";
+import { signIn, signOut, useSession } from "next-auth/react";
 import { useCart, won } from "@/lib/useCart";
 import type { RankedMenu, Store } from "@/lib/types";
 import RouletteModal from "./RouletteModal";
@@ -163,6 +163,13 @@ function MenuBoard() {
           {session.user.nickname ?? session.user.name ?? "회원"}님, 안녕하세요
           {" · "}
           <Link href="/stores/map">🗺️ 내 맛집 지도</Link>
+          {" · "}
+          <button
+            className="linklike"
+            onClick={() => signOut({ redirectTo: `/stores/${storeId}${nextQs}` })}
+          >
+            로그아웃
+          </button>
         </p>
       )}
 
