@@ -294,14 +294,9 @@ export const postgresAdapter: DbAdapter = {
   },
 
   async cancelOrder(orderId) {
-    const order = await this.getOrder(orderId);
-    if (!order) return null;
-    if (order.status !== "pending") return order; // 이미 결제/취소된 건 그대로 (멱등)
-
-    await sql`
-      UPDATE orders SET status = 'cancelled' WHERE id = ${orderId} AND status = 'pending'
-    `;
-    return this.getOrder(orderId);
+    // order_items는 FK ON DELETE CASCADE라 orders만 지우면 같이 정리됨.
+    // pending일 때만 지우고, 이미 결제/취소됐거나 없는 주문은 조용히 무시(멱등).
+    await sql`DELETE FROM orders WHERE id = ${orderId} AND status = 'pending'`;
   },
 
   async listOrders(storeId, days, limit = 50): Promise<OrderSummaryRow[]> {
