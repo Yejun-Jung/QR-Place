@@ -11,6 +11,13 @@ import {
   type PaymentMethod,
 } from "@/lib/types";
 
+const MONTH_OPTIONS = Array.from({ length: 12 }, (_, i) =>
+  String(i + 1).padStart(2, "0"),
+);
+const YEAR_OPTIONS = Array.from({ length: 11 }, (_, i) =>
+  String((new Date().getFullYear() + i) % 100).padStart(2, "0"),
+);
+
 const METHODS: PaymentMethod[] = ["card", "kakaopay", "counter"];
 const METHOD_ICON: Record<PaymentMethod, ComponentType> = {
   card: CardIcon,
@@ -34,9 +41,11 @@ function CheckoutView() {
 
   // 모의 카드 입력
   const [cardNo, setCardNo] = useState("");
-  const [exp, setExp] = useState("");
+  const [expMonth, setExpMonth] = useState("");
+  const [expYear, setExpYear] = useState("");
   const [cvc, setCvc] = useState("");
   const [pw2, setPw2] = useState("");
+  const exp = expMonth && expYear ? `${expMonth}/${expYear}` : "";
 
   useEffect(() => {
     if (!orderId) {
@@ -144,6 +153,7 @@ function CheckoutView() {
             <label className="field">카드 번호</label>
             <input
               className="inp"
+              type="password"
               inputMode="numeric"
               placeholder="0000 0000 0000 0000"
               value={cardNo}
@@ -161,22 +171,38 @@ function CheckoutView() {
           <div className="two">
             <div>
               <label className="field">유효기간</label>
-              <input
-                className="inp"
-                inputMode="numeric"
-                placeholder="MM/YY"
-                value={exp}
-                maxLength={5}
-                onChange={(e) => {
-                  const v = e.target.value.replace(/\D/g, "").slice(0, 4);
-                  setExp(v.length > 2 ? `${v.slice(0, 2)}/${v.slice(2)}` : v);
-                }}
-              />
+              <div className="two">
+                <select
+                  className="inp"
+                  value={expMonth}
+                  onChange={(e) => setExpMonth(e.target.value)}
+                >
+                  <option value="">월</option>
+                  {MONTH_OPTIONS.map((m) => (
+                    <option key={m} value={m}>
+                      {m}
+                    </option>
+                  ))}
+                </select>
+                <select
+                  className="inp"
+                  value={expYear}
+                  onChange={(e) => setExpYear(e.target.value)}
+                >
+                  <option value="">년</option>
+                  {YEAR_OPTIONS.map((y) => (
+                    <option key={y} value={y}>
+                      {y}
+                    </option>
+                  ))}
+                </select>
+              </div>
             </div>
             <div>
               <label className="field">CVC</label>
               <input
                 className="inp"
+                type="password"
                 inputMode="numeric"
                 placeholder="000"
                 value={cvc}
