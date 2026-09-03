@@ -597,3 +597,18 @@ ul.plain li {
   padding: 12px 0;
   border-bottom: 1px solid var(--line);
 }
+
+/* ── 내 맛집 지도 ── */
+.map-overlay {
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow);
+  padding: 10px 14px;
+  font-size: 0.85rem;
+  white-space: nowrap;
+}
+.map-overlay strong {
+  display: block;
+  margin-bottom: 4px;
+}

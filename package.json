@@ -24,13 +24,15 @@
     "qrcode": "^1.5.4",
     "react": "^19.0.0",
     "react-chartjs-2": "^5.3.0",
-    "react-dom": "^19.0.0"
+    "react-dom": "^19.0.0",
+    "react-kakao-maps-sdk": "^1.2.2"
   },
   "devDependencies": {
     "@types/node": "^24.0.0",
     "@types/qrcode": "^1.5.6",
     "@types/react": "^19.0.5",
     "@types/react-dom": "^19.0.3",
+    "kakao.maps.d.ts": "^0.1.40",
     "typescript": "^5.7.3",
     "vitest": "^2.1.8"
   }
