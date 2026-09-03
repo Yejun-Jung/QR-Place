@@ -37,7 +37,7 @@ function MenuBoard() {
   const cart = useCart(storeId, table);
   const [data, setData] = useState<MenusResponse | null>(null);
   const [error, setError] = useState<string | null>(null);
-  const [category, setCategory] = useState<string>("전체");
+  const [activeCat, setActiveCat] = useState<string>("전체");
   const [openMenu, setOpenMenu] = useState<RankedMenu | null>(null);
   const [sheetQty, setSheetQty] = useState(1);
   const [rouletteOpen, setRouletteOpen] = useState(false);
@@ -94,6 +94,12 @@ function MenuBoard() {
     setOpenMenu(null);
   };
 
+  const scrollToCategory = (cat: string) => {
+    setActiveCat(cat);
+    const id = cat === "전체" ? "cat-all" : `cat-${cat}`;
+    document.getElementById(id)?.scrollIntoView({ behavior: "smooth", block: "start" });
+  };
+
   const handleRouletteClick = () => {
     if (!session?.user) {
       signIn("kakao");
@@ -123,10 +129,12 @@ function MenuBoard() {
     );
 
   const cats = ["전체", ...data.categories];
-  const visible =
-    category === "전체"
-      ? data.menus
-      : data.menus.filter((m) => m.tags.category === category);
+  const groups = data.categories
+    .map((cat) => ({
+      cat,
+      items: data.menus.filter((m) => m.tags.category === cat),
+    }))
+    .filter((g) => g.items.length > 0);
 
   return (
     <>
@@ -191,46 +199,54 @@ function MenuBoard() {
         {cats.map((c) => (
           <button
             key={c}
-            className={`chip${category === c ? " active" : ""}`}
-            onClick={() => setCategory(c)}
+            className={`chip${activeCat === c ? " active" : ""}`}
+            onClick={() => scrollToCategory(c)}
           >
             {c}
           </button>
         ))}
       </div>
 
-      <div className="menu-list">
-        {visible.map((m, i) => {
-          const recommended =
-            data.personalized &&
-            m.recommendScore > 0 &&
-            data.menus.indexOf(m) < 3;
-          const inCartQty = cart.qtyOf(m.id);
-          return (
-            <div
-              key={m.id}
-              className={`menu-row${recommended ? " rec" : ""}`}
-              onClick={() => openSheet(m)}
-            >
-              <div>
-                {recommended && <span className="badge">추천</span>}
-                <div className="name">
-                  {m.name}
-                  {inCartQty > 0 && (
-                    <span className="in-cart">담음 {inCartQty}</span>
-                  )}
+      <div id="cat-all" />
+      {groups.map(({ cat, items }) => (
+        <section key={cat} id={`cat-${cat}`} className="menu-section">
+          <h2 className="section-title">{cat}</h2>
+          <div className="menu-list">
+            {items.map((m) => {
+              const recommended =
+                data.personalized &&
+                m.recommendScore > 0 &&
+                data.menus.indexOf(m) < 3;
+              const inCartQty = cart.qtyOf(m.id);
+              return (
+                <div
+                  key={m.id}
+                  className={`menu-row${recommended ? " rec" : ""}`}
+                  onClick={() => openSheet(m)}
+                >
+                  <div>
+                    {recommended && <span className="badge">추천</span>}
+                    <div className="name">
+                      {m.name}
+                      {inCartQty > 0 && (
+                        <span className="in-cart">담음 {inCartQty}</span>
+                      )}
+                    </div>
+                    {m.description && (
+                      <div className="desc">{m.description}</div>
+                    )}
+                    <div className="meta">
+                      {m.tags.category ?? "-"} · 맵기 {m.tags.spicy ?? 0} ·
+                      최근 주문 {m.popularity}건
+                    </div>
+                  </div>
+                  <div className="price">{won(m.price)}</div>
                 </div>
-                {m.description && <div className="desc">{m.description}</div>}
-                <div className="meta">
-                  {m.tags.category ?? "-"} · 맵기 {m.tags.spicy ?? 0} · 최근 주문{" "}
-                  {m.popularity}건
-                </div>
-              </div>
-              <div className="price">{won(m.price)}</div>
-            </div>
-          );
-        })}
-      </div>
+              );
+            })}
+          </div>
+        </section>
+      ))}
 
       {cart.count > 0 && (
         <Link
