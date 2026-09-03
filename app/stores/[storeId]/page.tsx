@@ -12,6 +12,7 @@ import { useParams, useSearchParams } from "next/navigation";
 import { signIn, useSession } from "next-auth/react";
 import { useCart, won } from "@/lib/useCart";
 import type { RankedMenu, Store } from "@/lib/types";
+import RouletteModal from "./RouletteModal";
 
 interface MenusResponse {
   store: Store;
@@ -38,6 +39,7 @@ function MenuBoard() {
   const [category, setCategory] = useState<string>("전체");
   const [openMenu, setOpenMenu] = useState<RankedMenu | null>(null);
   const [sheetQty, setSheetQty] = useState(1);
+  const [rouletteOpen, setRouletteOpen] = useState(false);
 
   // table/userId 를 유지한 쿼리스트링
   const nextQs = useMemo(() => {
@@ -89,6 +91,14 @@ function MenuBoard() {
       sheetQty,
     );
     setOpenMenu(null);
+  };
+
+  const handleRouletteClick = () => {
+    if (!session?.user) {
+      signIn("kakao");
+      return;
+    }
+    setRouletteOpen(true);
   };
 
   if (error)
@@ -154,6 +164,14 @@ function MenuBoard() {
           <Link href="/stores/map">🗺️ 내 맛집 지도</Link>
         </p>
       )}
+
+      <button
+        className="btn ghost"
+        style={{ margin: "8px 16px 0", width: "calc(100% - 32px)" }}
+        onClick={handleRouletteClick}
+      >
+        🎰 오늘의 룰렛 돌리기
+      </button>
 
       {data.blurb && <div className="blurb">💡 {data.blurb}</div>}
 
@@ -246,6 +264,14 @@ function MenuBoard() {
             </button>
           </div>
         </div>
+      )}
+
+      {rouletteOpen && (
+        <RouletteModal
+          menus={data.menus}
+          onClose={() => setRouletteOpen(false)}
+          onAdd={(m) => cart.add({ menuId: m.id, name: m.name, price: m.price })}
+        />
       )}
     </>
   );

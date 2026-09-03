@@ -612,3 +612,31 @@ ul.plain li {
   display: block;
   margin-bottom: 4px;
 }
+
+/* ── 룰렛 이벤트 ── */
+.sheet.roulette h3 {
+  text-align: center;
+}
+.roulette-slot {
+  margin: 20px 0;
+  padding: 24px 16px;
+  text-align: center;
+  font-size: 1.25rem;
+  font-weight: 700;
+  background: var(--bg);
+  border: 2px dashed var(--brand);
+  border-radius: var(--radius);
+}
+.roulette-slot.spinning {
+  color: var(--muted);
+  animation: roulette-pulse 0.15s ease-in-out infinite;
+}
+@keyframes roulette-pulse {
+  0%,
+  100% {
+    transform: scale(1);
+  }
+  50% {
+    transform: scale(0.96);
+  }
+}
