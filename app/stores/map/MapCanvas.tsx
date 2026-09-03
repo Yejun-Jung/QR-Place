@@ -3,8 +3,9 @@
 /// <reference types="kakao.maps.d.ts" />
 
 import { useEffect, useMemo, useState } from "react";
+import Script from "next/script";
 import Link from "next/link";
-import { CustomOverlayMap, Map, MapMarker, useKakaoLoader } from "react-kakao-maps-sdk";
+import { CustomOverlayMap, Map, MapMarker } from "react-kakao-maps-sdk";
 import type { Store } from "@/lib/types";
 import { averageCenter } from "@/lib/mapView";
 
@@ -12,7 +13,8 @@ const FALLBACK_CENTER = { lat: 37.5665, lng: 126.978 }; // 서울시청 (매장 
 
 export default function MapCanvas({ stores }: { stores: Store[] }) {
   const appkey = process.env.NEXT_PUBLIC_KAKAO_MAP_KEY ?? "";
-  const [loading, error] = useKakaoLoader({ appkey });
+  const [sdkReady, setSdkReady] = useState(false);
+  const [sdkError, setSdkError] = useState(false);
   const [map, setMap] = useState<kakao.maps.Map | null>(null);
   const [selectedId, setSelectedId] = useState<number | null>(null);
 
@@ -43,42 +45,47 @@ export default function MapCanvas({ stores }: { stores: Store[] }) {
       </p>
     );
   }
-  if (error) {
-    console.error("카카오맵 SDK 로드 실패:", error);
-    return (
-      <p className="blurb">
-        지도를 불러오지 못했어요. ({error.message || String(error)})
-      </p>
-    );
-  }
-  if (loading) {
-    return <p className="empty">지도를 불러오는 중…</p>;
-  }
 
   return (
-    <Map
-      center={center}
-      style={{ width: "100%", height: "60vh" }}
-      onCreate={setMap}
-    >
-      {points.map((s) => (
-        <MapMarker
-          key={s.id}
-          position={{ lat: s.latitude, lng: s.longitude }}
-          onClick={() => setSelectedId(s.id)}
-        />
-      ))}
-      {selected && (
-        <CustomOverlayMap
-          position={{ lat: selected.latitude, lng: selected.longitude }}
-          yAnchor={1.4}
+    <>
+      <Script
+        src={`https://dapi.kakao.com/v2/maps/sdk.js?appkey=${encodeURIComponent(appkey)}&autoload=false`}
+        strategy="afterInteractive"
+        onLoad={() => {
+          kakao.maps.load(() => setSdkReady(true));
+        }}
+        onError={() => setSdkError(true)}
+      />
+      {sdkError && <p className="blurb">지도를 불러오지 못했어요.</p>}
+      {!sdkError && !sdkReady && <p className="empty">지도를 불러오는 중…</p>}
+      {sdkReady && (
+        <Map
+          center={center}
+          style={{ width: "100%", height: "60vh" }}
+          onCreate={setMap}
         >
-          <div className="map-overlay">
-            <strong>{selected.name}</strong>
-            <Link href={`/stores/${selected.id}`}>메뉴 보기 (열람 전용)</Link>
-          </div>
-        </CustomOverlayMap>
+          {points.map((s) => (
+            <MapMarker
+              key={s.id}
+              position={{ lat: s.latitude, lng: s.longitude }}
+              onClick={() => setSelectedId(s.id)}
+            />
+          ))}
+          {selected && (
+            <CustomOverlayMap
+              position={{ lat: selected.latitude, lng: selected.longitude }}
+              yAnchor={1.4}
+            >
+              <div className="map-overlay">
+                <strong>{selected.name}</strong>
+                <Link href={`/stores/${selected.id}`}>
+                  메뉴 보기 (열람 전용)
+                </Link>
+              </div>
+            </CustomOverlayMap>
+          )}
+        </Map>
       )}
-    </Map>
+    </>
   );
 }
