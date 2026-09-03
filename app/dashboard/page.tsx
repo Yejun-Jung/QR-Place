@@ -1,6 +1,7 @@
-import { auth, signIn } from "@/auth";
+import { auth } from "@/auth";
 import { redirect } from "next/navigation";
 import AppHeader from "@/app/ui/AppHeader";
+import KakaoLoginCard from "@/app/ui/KakaoLoginCard";
 import { getStoreByOwner } from "@/lib/db";
 
 export default async function DashboardEntryPage() {
@@ -10,21 +11,10 @@ export default async function DashboardEntryPage() {
     return (
       <>
         <AppHeader title="점주 로그인" back={false} />
-        <div className="section">
-          <p className="muted" style={{ marginTop: 0 }}>
-            카카오 계정으로 로그인하면 내 매장 대시보드로 이동합니다.
-          </p>
-          <form
-            action={async () => {
-              "use server";
-              await signIn("kakao", { redirectTo: "/dashboard" });
-            }}
-          >
-            <button className="btn" type="submit">
-              카카오로 로그인
-            </button>
-          </form>
-        </div>
+        <KakaoLoginCard
+          message="카카오 계정으로 로그인하면 내 매장 대시보드로 이동합니다."
+          redirectTo="/dashboard"
+        />
       </>
     );
   }
