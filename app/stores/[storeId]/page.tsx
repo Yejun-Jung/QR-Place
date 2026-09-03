@@ -13,6 +13,7 @@ import { signIn, useSession } from "next-auth/react";
 import { useCart, won } from "@/lib/useCart";
 import type { RankedMenu, Store } from "@/lib/types";
 import RouletteModal from "./RouletteModal";
+import KakaoIcon from "@/app/ui/KakaoIcon";
 
 interface MenusResponse {
   store: Store;
@@ -153,7 +154,7 @@ function MenuBoard() {
             style={{ width: "auto", flexShrink: 0, padding: "6px 14px" }}
             onClick={() => signIn("kakao")}
           >
-            <span aria-hidden="true">💬</span> 로그인
+            <KakaoIcon /> 로그인
           </button>
         </div>
       )}
