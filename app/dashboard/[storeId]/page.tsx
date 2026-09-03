@@ -62,6 +62,15 @@ export default function DashboardPage() {
   const [stats, setStats] = useState<Stats | null>(null);
   const [orders, setOrders] = useState<OrderRow[]>([]);
   const [error, setError] = useState<string | null>(null);
+  const [storeName, setStoreName] = useState<string | null>(null);
+
+  // 매장 이름은 자주 안 바뀌니 폴링과 별개로 한 번만 불러온다.
+  useEffect(() => {
+    fetch(`/api/stores/${storeId}`)
+      .then((r) => (r.ok ? r.json() : Promise.reject(new Error(String(r.status)))))
+      .then((d) => setStoreName(d.store.name))
+      .catch(() => setStoreName(null));
+  }, [storeId]);
 
   // 새 주문이 들어오면 자동으로 반영되도록, 대시보드가 열려있는 동안
   // 5초마다 매출/주문을 다시 불러온다(탭이 백그라운드일 땐 쉼).
@@ -162,7 +171,7 @@ export default function DashboardPage() {
     <>
       <header className="app-header">
         <h1>점주 대시보드</h1>
-        <span className="sub">매장 {storeId}</span>
+        <span className="sub">{storeName ?? `매장 ${storeId}`}</span>
         <button
           className="logout"
           onClick={() => signOut({ redirectTo: "/" })}
