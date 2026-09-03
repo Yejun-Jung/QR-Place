@@ -40,7 +40,21 @@ export const postgresAdapter: DbAdapter = {
       kakao_id: string;
       nickname: string | null;
     }>`SELECT id, kakao_id, nickname FROM users WHERE kakao_id = ${kakaoId}`;
-    if (existing[0]) return existing[0];
+    if (existing[0]) {
+      // 이전 로그인 때 닉네임을 못 받아왔거나(null) 바뀐 경우 최신 값으로 동기화
+      if (nickname && nickname !== existing[0].nickname) {
+        const { rows: updated } = await sql<{
+          id: number;
+          kakao_id: string;
+          nickname: string | null;
+        }>`
+          UPDATE users SET nickname = ${nickname} WHERE id = ${existing[0].id}
+          RETURNING id, kakao_id, nickname
+        `;
+        return updated[0];
+      }
+      return existing[0];
+    }
     const { rows } = await sql<{
       id: number;
       kakao_id: string;

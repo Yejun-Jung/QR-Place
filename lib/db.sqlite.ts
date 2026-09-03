@@ -235,7 +235,16 @@ export const sqliteAdapter: DbAdapter = {
     const existing = queryOne<
       { id: number; kakao_id: string; nickname: string | null } | undefined
     >("SELECT id, kakao_id, nickname FROM users WHERE kakao_id = ?", kakaoId);
-    if (existing) return existing;
+    if (existing) {
+      // 이전 로그인 때 닉네임을 못 받아왔거나(null) 바뀐 경우 최신 값으로 동기화
+      if (nickname && nickname !== existing.nickname) {
+        db()
+          .prepare("UPDATE users SET nickname = ? WHERE id = ?")
+          .run(nickname, existing.id);
+        return { ...existing, nickname };
+      }
+      return existing;
+    }
     const row = queryOne<{ id: number }>(
       "INSERT INTO users (kakao_id, nickname) VALUES (?, ?) RETURNING id",
       kakaoId,
