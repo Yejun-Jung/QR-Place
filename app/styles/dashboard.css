@@ -10,46 +10,52 @@
   padding-bottom: 60px;
 }
 
-/* 카드 수를 폭에 맞춰 자동으로 늘린다 (모바일 1~2개 → 데스크톱 3개 이상) */
+/* 카드 수를 폭에 맞춰 자동으로 늘린다 (모바일 1~2개 → 데스크톱 3개 이상)
+   gap을 .dash-grid와 맞춰야 아래 차트 그리드와 칼럼 폭이 정확히 일치한다 */
 .kpi-grid {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
-  gap: 10px;
+  gap: 12px;
   padding: 0 16px;
 }
 
-/* 차트 영역(.dash-main) + 최근 주문(.dash-side)
-   - 좁은 화면: 차트 → 최근 주문 순으로 세로로 쌓는다
-   - 1200px↑: 왼쪽 차트, 오른쪽 최근 주문 사이드 칼럼 */
+/* 차트(매출·방문자·인기메뉴) + 최근 주문(.dash-side)
+   - 좁은 화면: 위에서 아래로 순서대로 쌓는다
+   - 1100px↑: kpi-grid와 같은 3칸 그리드. 최근 주문은 3번째 칼럼에서
+     두 행(차트 2개 + 인기메뉴)을 다 차지해, 주문이 몇 건이든 처음부터
+     왼쪽 차트 영역과 높이가 같다 (auto-fit 없이 grid-template-areas로
+     칼럼 폭을 고정해 kpi-grid와 픽셀 단위로 맞춘다) */
 .dash-grid {
   display: grid;
   grid-template-columns: 1fr;
   gap: 12px;
   padding: 12px 16px;
-  align-items: start;
 }
-@media (min-width: 1200px) {
+@media (min-width: 1100px) {
   .dash-grid {
-    grid-template-columns: minmax(0, 1fr) minmax(460px, 36%);
+    grid-template-columns: repeat(3, 1fr);
+    grid-template-areas:
+      "revenue  visitors orders"
+      "menu     menu     orders";
   }
+  .dash-grid .gc-revenue { grid-area: revenue; }
+  .dash-grid .gc-visitors { grid-area: visitors; }
+  .dash-grid .gc-menu { grid-area: menu; }
+  .dash-side { grid-area: orders; }
 }
-.dash-main {
-  display: grid;
-  grid-template-columns: 1fr;
-  gap: 12px;
-  min-width: 0; /* 차트 캔버스가 그리드 칸을 밀어내지 않게 */
-}
-@media (min-width: 900px) {
-  .dash-main {
-    grid-template-columns: repeat(2, 1fr);
-  }
-  /* 세 번째(인기 메뉴)는 두 칸을 다 써서 빈 칸이 안 생기게 */
-  .dash-main > .chart-box:nth-child(3) {
-    grid-column: 1 / -1;
-  }
+.dash-grid > .chart-box {
+  /* 차트 캔버스의 내재 크기가 그리드 칸을 밀어내 가로 스크롤이 생기지 않게 */
+  min-width: 0;
 }
 .dash-side {
   min-width: 0;
+  display: flex;
+  flex-direction: column;
+}
+.dash-side .chart-box {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
 }
 .dash-grid .chart-box {
   margin: 0;
@@ -84,22 +90,6 @@
 .chart-box h3 {
   font-size: 0.95rem;
   margin: 0 0 12px;
-}
-.table {
-  width: 100%;
-  border-collapse: collapse;
-  font-size: 0.85rem;
-}
-.table th,
-.table td {
-  text-align: left;
-  padding: 10px 8px;
-  border-bottom: 1px solid var(--line);
-  white-space: nowrap;
-}
-.table th {
-  color: var(--muted);
-  font-weight: 600;
 }
 .seg {
   display: inline-flex;
@@ -221,40 +211,54 @@ ul.plain li {
 }
 
 
-/* 최근 주문 표의 메뉴 열 · 처리 버튼 */
-.table .items-cell {
-  white-space: normal;
-  min-width: 160px;
-  max-width: 280px;
-}
-.row-actions {
+/* 최근 주문 — 표 대신 카드 목록. 완료/거절이 가장 자주 누르는 버튼이라
+   점주가 서서 스마트폰/태블릿으로도 실수 없이 누를 수 있게 크게 둔다. */
+.order-queue-list {
+  flex: 1;
+  overflow-y: auto;
   display: flex;
-  gap: 6px;
+  flex-direction: column;
+  gap: 10px;
+  margin-top: 4px;
 }
-.row-actions .mini-action {
-  padding: 5px 10px;
+.order-queue-row {
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  padding: 12px;
+  background: var(--bg);
 }
-.mini-action.accept {
-  border-color: #86efac;
-  color: #15803d;
+.order-queue-top {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-weight: 600;
+  font-size: 0.85rem;
 }
-.mini-action.reject {
-  border-color: #fca5a5;
-  color: #b91c1c;
+.order-queue-items {
+  margin-top: 6px;
+  font-size: 0.92rem;
 }
-@media (hover: hover) {
-  .mini-action.accept:hover {
-    background: #15803d;
-    border-color: #15803d;
-    color: #fff;
-  }
-  .mini-action.reject:hover {
-    background: #b91c1c;
-    border-color: #b91c1c;
-    color: #fff;
-  }
+.order-queue-meta {
+  margin-top: 6px;
+  font-size: 0.78rem;
+  color: var(--muted);
 }
-.mini-action:disabled {
-  opacity: 0.5;
-  cursor: default;
+.order-queue-actions {
+  display: flex;
+  gap: 8px;
+  margin-top: 12px;
+}
+.order-queue-actions .btn {
+  /* .btn의 width:100%가 flex-basis로 잡혀 두 버튼이 서로 쪼그라들던 문제 —
+     flex:1로 명시해 카드 폭을 절반씩 나눠 갖게 한다 */
+  flex: 1;
+  width: auto;
+  padding: 14px;
+  font-size: 1rem;
+}
+.order-queue-actions .btn.accept {
+  background: #16a34a;
+}
+.order-queue-actions .btn.reject {
+  background: #dc2626;
 }

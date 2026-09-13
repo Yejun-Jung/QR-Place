@@ -262,22 +262,21 @@ export default function DashboardPage() {
       </div>
 
       <div className="dash-grid">
-      <div className="dash-main">
-      <div className="chart-box">
+      <div className="chart-box gc-revenue">
         <h3>일별 매출</h3>
         <div style={{ position: "relative", height: 240 }}>
           <Line data={revenueChart} options={CHART_OPTS} />
         </div>
       </div>
 
-      <div className="chart-box">
+      <div className="chart-box gc-visitors">
         <h3>일별 방문자 · 조회</h3>
         <div style={{ position: "relative", height: 240 }}>
           <Line data={visitorChart} options={CHART_OPTS} />
         </div>
       </div>
 
-      <div className="chart-box">
+      <div className="chart-box gc-menu">
         <h3>인기 메뉴 (주문 수)</h3>
         <div style={{ position: "relative", height: 300 }}>
           <Bar
@@ -291,83 +290,62 @@ export default function DashboardPage() {
         </div>
       </div>
 
-      </div>
-
       <aside className="dash-side">
-      <div className="chart-box">
+      <div className="chart-box order-queue">
         <h3>최근 주문</h3>
         {orders.length === 0 ? (
           <p className="muted">주문이 없습니다.</p>
         ) : (
-          <div style={{ overflowX: "auto" }}>
-            <table className="table">
-              <thead>
-                <tr>
-                  <th>#</th>
-                  <th>테이블</th>
-                  <th>주문 메뉴</th>
-                  <th>수량</th>
-                  <th>금액</th>
-                  <th>결제</th>
-                  <th>상태</th>
-                  <th>시각</th>
-                  <th>처리</th>
-                </tr>
-              </thead>
-              <tbody>
-                {orders.map((o) => (
-                  <tr key={o.id}>
-                    <td>{o.id}</td>
-                    <td>{o.table_number ?? "-"}</td>
-                    <td className="items-cell">{o.items_summary ?? "-"}</td>
-                    <td>{o.item_count}</td>
-                    <td>{won(o.total_amount)}</td>
-                    <td>
-                      {o.payment_method
-                        ? PAYMENT_METHOD_LABEL[o.payment_method]
-                        : "-"}
-                    </td>
-                    <td>
-                      <span className={`status ${o.status}`}>
-                        {ORDER_STATUS_LABEL[o.status]}
-                      </span>
-                    </td>
-                    <td className="muted">
-                      {new Date(
-                        o.created_at.replace(" ", "T"),
-                      ).toLocaleString("ko-KR", {
-                        month: "2-digit",
-                        day: "2-digit",
-                        hour: "2-digit",
-                        minute: "2-digit",
-                      })}
-                    </td>
-                    <td>
-                      {o.status === "paid" ? (
-                        <div className="row-actions">
-                          <button
-                            className="mini-action accept"
-                            disabled={handling === o.id}
-                            onClick={() => handleOrder(o.id, "served")}
-                          >
-                            완료
-                          </button>
-                          <button
-                            className="mini-action reject"
-                            disabled={handling === o.id}
-                            onClick={() => handleOrder(o.id, "rejected")}
-                          >
-                            거절
-                          </button>
-                        </div>
-                      ) : (
-                        <span className="muted">-</span>
-                      )}
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
+          <div className="order-queue-list">
+            {orders.map((o) => (
+              <div key={o.id} className="order-queue-row">
+                <div className="order-queue-top">
+                  <span>
+                    #{o.id} · 테이블 {o.table_number ?? "-"}
+                  </span>
+                  <span className={`status ${o.status}`}>
+                    {ORDER_STATUS_LABEL[o.status]}
+                  </span>
+                </div>
+                <div className="order-queue-items">
+                  {o.items_summary ?? "-"}
+                </div>
+                <div className="order-queue-meta">
+                  {o.item_count}개 · {won(o.total_amount)}
+                  {o.payment_method
+                    ? ` · ${PAYMENT_METHOD_LABEL[o.payment_method]}`
+                    : ""}
+                  {" · "}
+                  {new Date(o.created_at.replace(" ", "T")).toLocaleString(
+                    "ko-KR",
+                    {
+                      month: "2-digit",
+                      day: "2-digit",
+                      hour: "2-digit",
+                      minute: "2-digit",
+                    },
+                  )}
+                </div>
+                {o.status === "paid" && (
+                  <div className="order-queue-actions">
+                    <button
+                      className="btn accept"
+                      disabled={handling === o.id}
+                      onClick={() => handleOrder(o.id, "served")}
+                    >
+                      완료
+                    </button>
+                    <button
+                      className="btn reject"
+                      disabled={handling === o.id}
+                      onClick={() => handleOrder(o.id, "rejected")}
+                    >
+                      거절
+                    </button>
+                  </div>
+                )}
+              </div>
+            ))}
           </div>
         )}
       </div>
