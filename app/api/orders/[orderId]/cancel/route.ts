@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
-import { cancelOrder } from "@/lib/db";
+import { cancelOrder, getOrder } from "@/lib/db";
+import { denyUnlessOrderOwner } from "@/lib/authz";
 
 export const runtime = "nodejs";
 
@@ -10,7 +11,7 @@ export const runtime = "nodejs";
  * 이미 결제됐거나 없는 주문이면 조용히 무시(멱등, 404 아님).
  */
 export async function POST(
-  _req: NextRequest,
+  req: NextRequest,
   { params }: { params: Promise<{ orderId: string }> },
 ) {
   const { orderId } = await params;
@@ -18,6 +19,23 @@ export async function POST(
   if (!Number.isFinite(id)) {
     return NextResponse.json({ error: "invalid orderId" }, { status: 400 });
   }
+
+  let body: Record<string, unknown> = {};
+  try {
+    body = await req.json();
+  } catch {
+    /* body 없어도 됨 */
+  }
+
+  // 주문번호만 알면 남의 결제대기 주문을 지울 수 있어서 소유권을 확인한다.
+  // 없는 주문은 그대로 성공 처리 — 취소는 멱등해야 뒤로가기를 두 번 눌러도 안전하다.
+  const existing = await getOrder(id);
+  if (!existing) return NextResponse.json({ ok: true });
+  const denied = await denyUnlessOrderOwner(
+    existing,
+    body.tableNumber == null ? null : String(body.tableNumber),
+  );
+  if (denied) return denied;
 
   try {
     await cancelOrder(id);

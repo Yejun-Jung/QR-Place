@@ -62,13 +62,22 @@ CREATE TABLE IF NOT EXISTS order_items (
   quantity INTEGER NOT NULL DEFAULT 1
 );
 
--- 룰렛 이벤트: 유저×매장당 하루 1회 제한 확인용 스핀 기록
+-- 룰렛 이벤트: 유저×매장당 하루 1회 제한 확인용 스핀 기록.
+-- 당첨 상품은 서버가 뽑아서 여기 남긴다 — 주문 생성 때 "무료 증정" 항목이
+-- 진짜 당첨분인지 대조하는 근거이자, 한 번 쓴 당첨을 재사용 못 하게 하는 기록.
 CREATE TABLE IF NOT EXISTS roulette_spins (
-  id       SERIAL PRIMARY KEY,
-  user_id  INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
-  store_id INTEGER NOT NULL REFERENCES stores(id) ON DELETE CASCADE,
-  spun_at  TIMESTAMPTZ NOT NULL DEFAULT NOW()
+  id            SERIAL PRIMARY KEY,
+  user_id       INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  store_id      INTEGER NOT NULL REFERENCES stores(id) ON DELETE CASCADE,
+  prize_kind    VARCHAR,
+  prize_menu_id INTEGER REFERENCES menus(id) ON DELETE SET NULL,
+  redeemed_at   TIMESTAMPTZ,
+  spun_at       TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
+
+ALTER TABLE roulette_spins ADD COLUMN IF NOT EXISTS prize_kind VARCHAR;
+ALTER TABLE roulette_spins ADD COLUMN IF NOT EXISTS prize_menu_id INTEGER REFERENCES menus(id) ON DELETE SET NULL;
+ALTER TABLE roulette_spins ADD COLUMN IF NOT EXISTS redeemed_at TIMESTAMPTZ;
 
 CREATE INDEX IF NOT EXISTS idx_view_logs_user  ON view_logs (user_id, created_at DESC);
 CREATE INDEX IF NOT EXISTS idx_view_logs_store ON view_logs (store_id, created_at DESC);

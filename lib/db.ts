@@ -21,6 +21,7 @@ import type {
   PaymentMethod,
   PopularMenuRow,
   RevenueRow,
+  RouletteSpin,
   Store,
   User,
 } from "./types";
@@ -38,7 +39,16 @@ export interface DbAdapter {
   getVisitedStoresByUser(userId: number): Promise<Store[]>;
   /** 룰렛 이벤트: 유저×매장 기준 오늘 이미 돌렸는지 */
   hasSpunToday(userId: number, storeId: number): Promise<boolean>;
-  recordSpin(userId: number, storeId: number): Promise<void>;
+  /** 스핀 기록 + 서버가 뽑은 당첨 상품 저장 (클라이언트가 상품을 못 정하게) */
+  recordSpin(
+    userId: number,
+    storeId: number,
+    prize: { kind: string; menuId: number | null },
+  ): Promise<void>;
+  /** 오늘 이 매장에서 돌린 스핀 기록 — 무료 증정 검증용 */
+  getTodaySpin(userId: number, storeId: number): Promise<RouletteSpin | null>;
+  /** 당첨을 실제 주문에 사용 처리 (같은 당첨으로 두 번 못 받게) */
+  redeemSpin(spinId: number): Promise<void>;
   getStoreMenus(storeId: number): Promise<Menu[]>;
   /** 이 메뉴와 같은 결제완료 주문에 가장 자주 같이 담긴 메뉴 (룰렛 무료증정 제외) */
   getPairedMenus(menuId: number, limit?: number): Promise<Menu[]>;
@@ -151,8 +161,18 @@ export async function getVisitedStoresByUser(userId: number) {
 export async function hasSpunToday(userId: number, storeId: number) {
   return (await getAdapter()).hasSpunToday(userId, storeId);
 }
-export async function recordSpin(userId: number, storeId: number) {
-  return (await getAdapter()).recordSpin(userId, storeId);
+export async function recordSpin(
+  userId: number,
+  storeId: number,
+  prize: { kind: string; menuId: number | null },
+) {
+  return (await getAdapter()).recordSpin(userId, storeId, prize);
+}
+export async function getTodaySpin(userId: number, storeId: number) {
+  return (await getAdapter()).getTodaySpin(userId, storeId);
+}
+export async function redeemSpin(spinId: number) {
+  return (await getAdapter()).redeemSpin(spinId);
 }
 export async function createMenu(storeId: number, input: MenuInput) {
   return (await getAdapter()).createMenu(storeId, input);

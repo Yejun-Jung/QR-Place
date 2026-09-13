@@ -5,6 +5,7 @@ import {
   getRevenueByDay,
   parseRangeDays,
 } from "@/lib/db";
+import { denyUnlessStoreOwner } from "@/lib/authz";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -22,6 +23,10 @@ export async function GET(
   if (!Number.isFinite(storeId)) {
     return NextResponse.json({ error: "invalid storeId" }, { status: 400 });
   }
+
+  // 매출은 영업 정보라 매장 주인만 본다
+  const denied = await denyUnlessStoreOwner(storeId);
+  if (denied) return denied;
 
   const url = new URL(req.url);
   const days = parseRangeDays(url.searchParams.get("range"), 7);

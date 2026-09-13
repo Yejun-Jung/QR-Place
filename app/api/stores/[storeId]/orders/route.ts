@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { listOrders, parseRangeDays } from "@/lib/db";
+import { denyUnlessStoreOwner } from "@/lib/authz";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -14,6 +15,10 @@ export async function GET(
   if (!Number.isFinite(id)) {
     return NextResponse.json({ error: "invalid storeId" }, { status: 400 });
   }
+  // 손님 주문 내역이라 매장 주인만 본다
+  const denied = await denyUnlessStoreOwner(id);
+  if (denied) return denied;
+
   const days = parseRangeDays(new URL(req.url).searchParams.get("range"), 7);
 
   try {

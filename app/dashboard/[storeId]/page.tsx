@@ -93,7 +93,16 @@ export default function DashboardPage() {
           setError(null);
         })
         .catch((e) => {
-          if (!cancelled) setError(`불러오기 실패: ${e.message}`);
+          if (cancelled) return;
+          // 점주 전용 API라 남의 매장이거나 로그아웃 상태면 401/403이 온다
+          const msg = String(e.message);
+          setError(
+            msg.includes("401")
+              ? "로그인이 필요합니다. 점주 계정으로 로그인해 주세요."
+              : msg.includes("403")
+                ? "이 매장의 점주만 볼 수 있는 대시보드입니다."
+                : `불러오기 실패: ${msg}`,
+          );
         });
     };
     // 탭이 보일 때만 부른다 — 최초 진입은 무조건 불러오고, 이후 폴링/탭

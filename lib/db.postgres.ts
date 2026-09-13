@@ -16,6 +16,7 @@ import type {
   PaymentMethod,
   PopularMenuRow,
   RevenueRow,
+  RouletteSpin,
   Store,
 } from "./types";
 
@@ -97,9 +98,29 @@ export const postgresAdapter: DbAdapter = {
     return (rows[0]?.n ?? 0) > 0;
   },
 
-  async recordSpin(userId, storeId) {
+  async recordSpin(userId, storeId, prize) {
     await sql`
-      INSERT INTO roulette_spins (user_id, store_id) VALUES (${userId}, ${storeId})
+      INSERT INTO roulette_spins (user_id, store_id, prize_kind, prize_menu_id)
+      VALUES (${userId}, ${storeId}, ${prize.kind}, ${prize.menuId})
+    `;
+  },
+
+  async getTodaySpin(userId, storeId) {
+    const { rows } = await sql<RouletteSpin>`
+      SELECT id, prize_kind, prize_menu_id, redeemed_at
+      FROM roulette_spins
+      WHERE user_id = ${userId} AND store_id = ${storeId}
+        AND spun_at >= date_trunc('day', NOW())
+      ORDER BY spun_at DESC
+      LIMIT 1
+    `;
+    return rows[0] ?? null;
+  },
+
+  async redeemSpin(spinId) {
+    await sql`
+      UPDATE roulette_spins SET redeemed_at = NOW()
+      WHERE id = ${spinId} AND redeemed_at IS NULL
     `;
   },
 

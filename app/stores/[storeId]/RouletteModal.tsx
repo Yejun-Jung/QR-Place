@@ -1,16 +1,11 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import {
-  pickRoulette,
-  pickRoulettePrize,
-  ROULETTE_PRIZES,
-} from "@/lib/recommend";
+import { ROULETTE_PRIZES } from "@/lib/recommend";
 import type { RoulettePrize } from "@/lib/recommend";
 import { won } from "@/lib/useCart";
 import type { RankedMenu } from "@/lib/types";
 
-const POOL_SIZE = 3;
 const TICK_COUNT = 14;
 const TICK_MIN_MS = 80;
 const TICK_MAX_MS = 650;
@@ -24,23 +19,19 @@ function tickDelay(i: number) {
 type Status = "checking" | "denied" | "spinning" | "result";
 
 /**
- * 룰렛 이벤트 모달. 열리면 먼저 서버에 스핀 가능 여부를 확인(+기록)하고,
- * 허용되면 4개 고정 상품 중 하나를 pickRoulettePrize()로 뽑아 슬롯머신
- * 애니메이션으로 연출한다. "추천 메뉴" 당첨 시에만 pickRoulette()으로
- * 상위 추천 메뉴 중 하나를 골라 장바구니에 담을 수 있다.
+ * 룰렛 이벤트 모달. 열리면 서버에 스핀을 요청하고(하루 1회 확인 + 당첨 추첨 +
+ * 기록), 서버가 돌려준 상품을 슬롯머신 애니메이션으로 연출만 한다.
+ * 상품 추첨은 전적으로 서버 몫 — 클라이언트가 정하면 무료 증정을 자작할 수 있다.
  */
 export default function RouletteModal({
   storeId,
-  menus,
   onClose,
   onAdd,
 }: {
   storeId: string | number;
-  menus: RankedMenu[];
   onClose: () => void;
   onAdd: (menu: RankedMenu) => void;
 }) {
-  const pool = menus.slice(0, POOL_SIZE);
   const [status, setStatus] = useState<Status>("checking");
   const [deniedReason, setDeniedReason] = useState<string | null>(null);
   const [displayedLabel, setDisplayedLabel] = useState(
@@ -49,13 +40,11 @@ export default function RouletteModal({
   const [prize, setPrize] = useState<RoulettePrize | null>(null);
   const [wonMenu, setWonMenu] = useState<RankedMenu | null>(null);
 
-  const spin = () => {
+  /** 서버가 뽑아준 결과를 슬롯 연출로 보여준다 */
+  const spin = (picked: RoulettePrize, pickedMenu: RankedMenu | null) => {
     setStatus("spinning");
     setPrize(null);
     setWonMenu(null);
-    const picked = pickRoulettePrize();
-    const pickedMenu =
-      picked.kind === "menu" ? pickRoulette(pool, pool.length) : null;
 
     let i = 0;
     const step = () => {
@@ -73,14 +62,18 @@ export default function RouletteModal({
     step();
   };
 
-  // 모달이 열리면 먼저 "오늘 돌려도 되는지" 서버에 확인+기록부터 한다.
+  // 모달이 열리면 서버에 스핀을 요청한다 — 당첨 상품까지 서버가 정해서 돌려준다.
   useEffect(() => {
     let cancelled = false;
     fetch(`/api/stores/${storeId}/roulette`, { method: "POST" })
       .then(async (r) => {
         if (cancelled) return;
         if (r.ok) {
-          spin();
+          const body = (await r.json()) as {
+            prize: RoulettePrize;
+            menu: RankedMenu | null;
+          };
+          spin(body.prize, body.menu);
           return;
         }
         const body = await r.json().catch(() => ({}) as { error?: string });

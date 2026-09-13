@@ -8,6 +8,7 @@ import {
   parseRangeDays,
 } from "@/lib/db";
 import { generateBlurb } from "@/lib/blurb";
+import { denyUnlessStoreOwner } from "@/lib/authz";
 import { recommendMenus } from "@/lib/recommend";
 import type { LogEntry, MenuInput, MenuTags } from "@/lib/types";
 
@@ -86,6 +87,9 @@ export async function POST(
   if (!Number.isFinite(storeId)) {
     return NextResponse.json({ error: "invalid storeId" }, { status: 400 });
   }
+
+  const denied = await denyUnlessStoreOwner(storeId);
+  if (denied) return denied;
 
   let body: Record<string, unknown>;
   try {

@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
-import { payOrder } from "@/lib/db";
+import { getOrder, payOrder } from "@/lib/db";
+import { denyUnlessOrderOwner } from "@/lib/authz";
 import type { PaymentMethod } from "@/lib/types";
 
 export const runtime = "nodejs";
@@ -39,6 +40,17 @@ export async function POST(
       { status: 400 },
     );
   }
+
+  // 주문번호만 알면 남의 주문을 결제 처리할 수 있어서 소유권부터 확인한다
+  const existing = await getOrder(id);
+  if (!existing) {
+    return NextResponse.json({ error: "order not found" }, { status: 404 });
+  }
+  const denied = await denyUnlessOrderOwner(
+    existing,
+    body.tableNumber == null ? null : String(body.tableNumber),
+  );
+  if (denied) return denied;
 
   // 결제 게이트웨이 지연 흉내
   await new Promise((r) => setTimeout(r, 600));

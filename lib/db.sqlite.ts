@@ -26,6 +26,7 @@ import type {
   PaymentMethod,
   PopularMenuRow,
   RevenueRow,
+  RouletteSpin,
   Store,
 } from "./types";
 
@@ -82,10 +83,13 @@ CREATE TABLE IF NOT EXISTS order_items (
   quantity INTEGER NOT NULL DEFAULT 1
 );
 CREATE TABLE IF NOT EXISTS roulette_spins (
-  id       INTEGER PRIMARY KEY AUTOINCREMENT,
-  user_id  INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
-  store_id INTEGER NOT NULL REFERENCES stores(id) ON DELETE CASCADE,
-  spun_at  TEXT NOT NULL DEFAULT (datetime('now'))
+  id            INTEGER PRIMARY KEY AUTOINCREMENT,
+  user_id       INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  store_id      INTEGER NOT NULL REFERENCES stores(id) ON DELETE CASCADE,
+  prize_kind    TEXT,
+  prize_menu_id INTEGER REFERENCES menus(id) ON DELETE SET NULL,
+  redeemed_at   TEXT,
+  spun_at       TEXT NOT NULL DEFAULT (datetime('now'))
 );
 CREATE INDEX IF NOT EXISTS idx_view_logs_user  ON view_logs (user_id, created_at DESC);
 CREATE INDEX IF NOT EXISTS idx_view_logs_store ON view_logs (store_id, created_at DESC);
@@ -153,6 +157,19 @@ function db(): DatabaseSync {
   }[];
   if (!storeCols.some((c) => c.name === "owner_user_id")) {
     d.exec("ALTER TABLE stores ADD COLUMN owner_user_id INTEGER REFERENCES users(id)");
+  }
+  // 룰렛 당첨 상품 컬럼 (기존 데모 DB 파일에도 붙여준다)
+  const spinCols = d.prepare("PRAGMA table_info(roulette_spins)").all() as {
+    name: string;
+  }[];
+  for (const [col, ddl] of [
+    ["prize_kind", "prize_kind TEXT"],
+    ["prize_menu_id", "prize_menu_id INTEGER REFERENCES menus(id) ON DELETE SET NULL"],
+    ["redeemed_at", "redeemed_at TEXT"],
+  ] as const) {
+    if (!spinCols.some((c) => c.name === col)) {
+      d.exec(`ALTER TABLE roulette_spins ADD COLUMN ${ddl}`);
+    }
   }
   const seeded = d
     .prepare("SELECT COUNT(*) AS n FROM stores")
@@ -288,12 +305,34 @@ export const sqliteAdapter: DbAdapter = {
     return (row?.n ?? 0) > 0;
   },
 
-  async recordSpin(userId, storeId) {
+  async recordSpin(userId, storeId, prize) {
     db()
       .prepare(
-        "INSERT INTO roulette_spins (user_id, store_id) VALUES (?, ?)",
+        `INSERT INTO roulette_spins (user_id, store_id, prize_kind, prize_menu_id)
+         VALUES (?, ?, ?, ?)`,
       )
-      .run(userId, storeId);
+      .run(userId, storeId, prize.kind, prize.menuId);
+  },
+
+  async getTodaySpin(userId, storeId) {
+    return (
+      queryOne<RouletteSpin | undefined>(
+        `SELECT id, prize_kind, prize_menu_id, redeemed_at
+         FROM roulette_spins
+         WHERE user_id = ? AND store_id = ? AND date(spun_at) = date('now')
+         ORDER BY spun_at DESC LIMIT 1`,
+        userId,
+        storeId,
+      ) ?? null
+    );
+  },
+
+  async redeemSpin(spinId) {
+    db()
+      .prepare(
+        "UPDATE roulette_spins SET redeemed_at = datetime('now') WHERE id = ? AND redeemed_at IS NULL",
+      )
+      .run(spinId);
   },
 
   async getStoreMenus(storeId) {

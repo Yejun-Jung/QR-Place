@@ -92,7 +92,12 @@ function CheckoutView() {
         return;
       }
       if (orderRef.current) {
-        void fetch(`/api/orders/${orderRef.current.id}/cancel`, { method: "POST" });
+        void fetch(`/api/orders/${orderRef.current.id}/cancel`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          // 서버가 "이 주문의 손님이 맞는지" 확인하는 값
+          body: JSON.stringify({ tableNumber: orderRef.current.table_number }),
+        });
       }
       const p = new URLSearchParams();
       if (table) p.set("table", table);
@@ -121,7 +126,11 @@ function CheckoutView() {
       const res = await fetch(`/api/orders/${order.id}/pay`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ paymentMethod: method }),
+        body: JSON.stringify({
+          paymentMethod: method,
+          // 서버가 "이 주문의 손님이 맞는지" 확인하는 값
+          tableNumber: order.table_number,
+        }),
       });
       const json = await res.json();
       if (!res.ok) throw new Error(json.error ?? String(res.status));

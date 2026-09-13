@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { deleteMenu, getPairedMenus, updateMenu } from "@/lib/db";
+import { denyUnlessStoreOwner } from "@/lib/authz";
 import type { MenuInput, MenuTags } from "@/lib/types";
 
 export const runtime = "nodejs";
@@ -35,11 +36,15 @@ export async function PUT(
   req: NextRequest,
   { params }: { params: Promise<{ storeId: string; menuId: string }> },
 ) {
-  const { menuId: menuIdRaw } = await params;
+  const { storeId: storeIdRaw, menuId: menuIdRaw } = await params;
+  const storeId = Number(storeIdRaw);
   const menuId = Number(menuIdRaw);
-  if (!Number.isFinite(menuId)) {
+  if (!Number.isFinite(storeId) || !Number.isFinite(menuId)) {
     return NextResponse.json({ error: "invalid menuId" }, { status: 400 });
   }
+
+  const denied = await denyUnlessStoreOwner(storeId, menuId);
+  if (denied) return denied;
 
   let body: Record<string, unknown>;
   try {
@@ -86,11 +91,15 @@ export async function DELETE(
   _req: NextRequest,
   { params }: { params: Promise<{ storeId: string; menuId: string }> },
 ) {
-  const { menuId: menuIdRaw } = await params;
+  const { storeId: storeIdRaw, menuId: menuIdRaw } = await params;
+  const storeId = Number(storeIdRaw);
   const menuId = Number(menuIdRaw);
-  if (!Number.isFinite(menuId)) {
+  if (!Number.isFinite(storeId) || !Number.isFinite(menuId)) {
     return NextResponse.json({ error: "invalid menuId" }, { status: 400 });
   }
+
+  const denied = await denyUnlessStoreOwner(storeId, menuId);
+  if (denied) return denied;
 
   try {
     await deleteMenu(menuId);
