@@ -4,6 +4,7 @@ import { useEffect, useRef, useState } from "react";
 import { useParams } from "next/navigation";
 import QRCode from "qrcode";
 import AppHeader from "@/app/ui/AppHeader";
+import { useStoreName } from "@/app/ui/useStoreName";
 import { buildTableQrUrl } from "@/lib/qr";
 
 function QrCard({
@@ -17,8 +18,14 @@ function QrCard({
   const url = buildTableQrUrl(window.location.origin, storeId, table);
 
   useEffect(() => {
-    if (!canvasRef.current) return;
-    void QRCode.toCanvas(canvasRef.current, url, { width: 220, margin: 1 });
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+    void QRCode.toCanvas(canvas, url, { width: 220, margin: 1 }).then(() => {
+      // toCanvas 가 인라인 style(width/height: 220px)을 박아넣어 CSS 를 덮어쓴다.
+      // 카드보다 큰 화면 폭에서 QR 이 카드 밖으로 삐져나오므로 지워서 CSS 에 맡긴다.
+      canvas.style.removeProperty("width");
+      canvas.style.removeProperty("height");
+    });
   }, [url]);
 
   const download = () => {
@@ -44,6 +51,7 @@ function QrCard({
 
 export default function QrPage() {
   const { storeId } = useParams<{ storeId: string }>();
+  const storeName = useStoreName(storeId);
   const [tableCount, setTableCount] = useState(10);
   const [tables, setTables] = useState<string[] | null>(null);
 
@@ -54,7 +62,7 @@ export default function QrPage() {
 
   return (
     <>
-      <AppHeader title="QR 코드 생성" sub={`매장 ${storeId}`} />
+      <AppHeader title="QR 코드 생성" sub={storeName ?? `매장 ${storeId}`} />
 
       <div className="section">
         <div className="qr-form">

@@ -13,7 +13,6 @@ import type {
   Order,
   OrderItem,
   CustomerOrderRow,
-  OrderSummaryRow,
   PaymentMethod,
   PopularMenuRow,
   RevenueRow,
@@ -337,6 +336,15 @@ export const postgresAdapter: DbAdapter = {
     await sql`DELETE FROM orders WHERE id = ${orderId} AND status = 'pending'`;
   },
 
+  async setOrderStatus(orderId, status) {
+    // 결제된 주문만 접수 처리한다 (아직 결제 전이거나 이미 처리된 건 무시)
+    await sql`
+      UPDATE orders SET status = ${status}
+      WHERE id = ${orderId} AND status = 'paid'
+    `;
+    return this.getOrder(orderId);
+  },
+
   async listCustomerOrders(
     storeId,
     tableNumber,
@@ -365,11 +373,13 @@ export const postgresAdapter: DbAdapter = {
     return rows;
   },
 
-  async listOrders(storeId, days, limit = 50): Promise<OrderSummaryRow[]> {
-    const { rows } = await sql<OrderSummaryRow>`
+  async listOrders(storeId, days, limit = 50): Promise<CustomerOrderRow[]> {
+    const { rows } = await sql<CustomerOrderRow>`
       SELECT o.id, o.table_number, o.status, o.payment_method, o.total_amount,
              o.created_at,
-             COALESCE((SELECT SUM(quantity)::int FROM order_items WHERE order_id = o.id), 0) AS item_count
+             COALESCE((SELECT SUM(quantity)::int FROM order_items WHERE order_id = o.id), 0) AS item_count,
+             (SELECT string_agg(name || ' x' || quantity, ', ')
+                FROM order_items WHERE order_id = o.id) AS items_summary
       FROM orders o
       WHERE o.store_id = ${storeId}
         AND o.created_at >= NOW() - ${days} * INTERVAL '1 day'

@@ -202,3 +202,48 @@
   font-size: 0.82rem;
 }
 
+
+/* ── 주문 처리 알림 (점주가 완료/거절했을 때 손님 메뉴판에 뜬다) ── */
+.order-notice {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin: 12px 16px;
+  padding: 12px 14px;
+  border-radius: var(--radius);
+  font-size: 0.9rem;
+  font-weight: 600;
+  animation: noticeIn 0.25s ease-out;
+}
+.order-notice span {
+  flex: 1;
+}
+.order-notice.served {
+  background: #dcfce7;
+  border: 1px solid #86efac;
+  color: #15803d;
+}
+.order-notice.rejected {
+  background: #fee2e2;
+  border: 1px solid #fca5a5;
+  color: #b91c1c;
+}
+.notice-close {
+  border: none;
+  background: transparent;
+  color: inherit;
+  font-size: 1.1rem;
+  line-height: 1;
+  cursor: pointer;
+  padding: 2px 4px;
+  opacity: 0.7;
+}
+.notice-close:hover {
+  opacity: 1;
+}
+@keyframes noticeIn {
+  from {
+    opacity: 0;
+    transform: translateY(-6px);
+  }
+}

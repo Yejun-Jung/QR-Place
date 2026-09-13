@@ -159,8 +159,8 @@
 
 .qr-grid {
   display: grid;
-  /* 모바일 2개 → 넓어지면 자동으로 더 많이 */
-  grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+  /* QR 은 220px 로 그려지니 카드가 그보다 좁아지지 않게 (좁으면 QR 이 삐져나온다) */
+  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
   gap: 10px;
   padding: 0 16px 16px;
 }
@@ -175,6 +175,7 @@
 }
 .qr-card canvas {
   width: 100%;
+  max-width: 220px; /* 카드가 넓어져도 QR 은 원본 크기까지만 */
   height: auto;
 }
 .qr-card .label {
@@ -207,3 +208,41 @@ ul.plain li {
   border-bottom: 1px solid var(--line);
 }
 
+
+/* 최근 주문 표의 메뉴 열 · 처리 버튼 */
+.table .items-cell {
+  white-space: normal;
+  min-width: 160px;
+  max-width: 280px;
+}
+.row-actions {
+  display: flex;
+  gap: 6px;
+}
+.row-actions .mini-action {
+  padding: 5px 10px;
+}
+.mini-action.accept {
+  border-color: #86efac;
+  color: #15803d;
+}
+.mini-action.reject {
+  border-color: #fca5a5;
+  color: #b91c1c;
+}
+@media (hover: hover) {
+  .mini-action.accept:hover {
+    background: #15803d;
+    border-color: #15803d;
+    color: #fff;
+  }
+  .mini-action.reject:hover {
+    background: #b91c1c;
+    border-color: #b91c1c;
+    color: #fff;
+  }
+}
+.mini-action:disabled {
+  opacity: 0.5;
+  cursor: default;
+}

@@ -48,12 +48,17 @@ CREATE TABLE IF NOT EXISTS orders (
   store_id       INTEGER NOT NULL REFERENCES stores(id) ON DELETE CASCADE,
   user_id        INTEGER REFERENCES users(id) ON DELETE SET NULL,
   table_number   VARCHAR,
-  status         VARCHAR NOT NULL DEFAULT 'pending' CHECK (status IN ('pending','paid','cancelled')),
+  status         VARCHAR NOT NULL DEFAULT 'pending' CHECK (status IN ('pending','paid','served','rejected','cancelled')),
   payment_method VARCHAR CHECK (payment_method IN ('card','kakaopay','counter')),
   total_amount   INTEGER NOT NULL DEFAULT 0,
   created_at     TIMESTAMPTZ NOT NULL DEFAULT NOW(),
   paid_at        TIMESTAMPTZ
 );
+
+-- 기존 배포본: 점주 접수(served/rejected) 상태를 허용하도록 제약 갱신
+ALTER TABLE orders DROP CONSTRAINT IF EXISTS orders_status_check;
+ALTER TABLE orders ADD CONSTRAINT orders_status_check
+  CHECK (status IN ('pending','paid','served','rejected','cancelled'));
 
 -- 주문 항목 (주문 시점 이름/가격 스냅샷)
 CREATE TABLE IF NOT EXISTS order_items (
