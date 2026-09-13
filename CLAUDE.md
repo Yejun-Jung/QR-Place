@@ -134,8 +134,8 @@ QR-Place는 유저의 과거 주문/방문 통계를 분석해 취향에 맞는 
   → https://qr-place.vercel.app
 
 ### 아직 없는 것 (남은 과제)
-1. ESLint 설정 (`npm run lint` 스크립트만 있고 설정 파일이 없음)
-2. API 라우트 통합 테스트 (현재 테스트는 순수 함수 + 권한 가드 유닛 테스트 32개)
+1. ~~ESLint 설정~~ (완료 — eslint.config.mjs, flat config)
+2. API 라우트 통합 테스트 — 주문 라우트만 커버됨 (전체 45개 테스트). 나머지 라우트와 useCart 훅은 미테스트
 3. 조리 상태 알림 (orders.status가 pending/paid/cancelled뿐 — 조리중/준비완료 없음)
 4. 비로그인 손님용 익명 세션 ID (현재는 로그인해야 개인화가 붙음)
 

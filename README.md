@@ -64,7 +64,8 @@ DB를 초기화하려면: `npm run db:reset` (`qr-place.db` 삭제 → 다음 �
 ## 테스트
 
 ```bash
-npm test          # 유닛 테스트 32개 — 추천 로직·권한 가드·QR·카카오·지도 (DB 불필요)
+npm run lint      # ESLint (flat config, eslint.config.mjs)
+npm test          # 유닛 테스트 45개 — 추천·권한 가드·주문 검증·문구·QR·카카오·지도
 npm run smoke     # SQLite 어댑터 쿼리 스모크 (로컬 qr-place.db)
 ```
 
@@ -107,8 +108,10 @@ lib/
   db.ts                        드라이버 선택 + 공용 인터페이스(DbAdapter)
   db.sqlite.ts                 SQLite 어댑터 (기본)
   db.postgres.ts               Vercel Postgres 어댑터
-  __tests__/                   유닛 테스트 (recommend / authz / qr / kakao / mapView)
+  __tests__/                   유닛 테스트 (recommend / authz / ordersRoute / blurb / qr / kakao / mapView)
 app/
+  globals.css                                 전역 스타일 진입점 (styles/ 를 순서대로 @import)
+  styles/                                     화면 단위로 나눈 CSS (import 순서 = cascade 순서)
   ui/AppHeader.tsx                            공용 헤더(뒤로가기)
   ui/KakaoLoginCard.tsx                       로그인 필요 화면 공용 카드
   api/logs/route.ts                           POST 조회/주문 로그      (스펙 5)
