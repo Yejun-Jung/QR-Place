@@ -24,6 +24,15 @@
 QR-Place는 유저의 과거 주문/방문 통계를 분석해 취향에 맞는 메뉴를 자동 추천하는 초개인화 기능이 핵심 차별점.  
 (AI/딥러닝 없이 view_logs DB의 태그 가중치 집계 SQL로 구현 — 1인 개발 현실 반영)
 
+구체적으로는 아래 4가지를 하나의 흐름으로 묶었다.
+
+1. **초개인화 추천** — view_logs의 태그 가중치로 메뉴판 정렬 자체가 유저마다 다르다 (lib/recommend.ts)
+2. **나의 취향 리포트** — 그 추천 근거를 손님에게 직접 보여준다. 관심 카테고리 그래프 + 한 줄 요약 (app/stores/taste/)
+3. **메뉴 페어링 추천** — 결제완료 주문을 자기조인해 "함께 많이 시킨 메뉴"를 제안 (구매 데이터 기반 연관 추천)
+4. **룰렛 이벤트** — 당첨 시 실제 0원 무료증정이 주문·결제까지 반영되는 게이미피케이션 (서버 추첨)
+
+보조 차별점: 카카오맵 "내 맛집 지도", 점주 통계 대시보드(음료·주류는 인기순 집계에서 제외), 하드웨어 설치 비용 0원.
+
 ---
 
 ## 확정된 기술 스택
@@ -42,12 +51,23 @@ QR-Place는 유저의 과거 주문/방문 통계를 분석해 취향에 맞는 
 ## DB 스키마 (확정)
 
 - users: id, kakao_id(UNIQUE), nickname
-- stores: id, kakao_place_id, name, latitude, longitude
+- stores: id, kakao_place_id, name, latitude, longitude, owner_user_id(점주 = 이 매장 소유자)
 - menus: id, store_id, name, price, description, tags(JSONB)
   - tags 예시: {"category": "찌개", "spicy": 3, "price_range": "mid"}
 - view_logs: id, user_id(NULL=비로그인), table_number, store_id, menu_id, action_type(view|order), created_at
-- orders: id, store_id, user_id, table_number, status, payment_method, total_amount, created_at, paid_at
+- orders: id, store_id, user_id, table_number, status(pending|paid|cancelled), payment_method, total_amount, created_at, paid_at
 - order_items: id, order_id, menu_id, name, price, quantity
+  - 이름·가격은 **주문 시점 스냅샷** (클라이언트 위조 방지: 서버가 DB 기준으로 다시 계산)
+- roulette_spins: id, user_id, store_id, prize_kind, prize_menu_id, redeemed_at, spun_at
+  - 유저×매장 하루 1회 제한 + **서버가 뽑은 당첨 상품 기록**. 주문 생성 시 0원 항목이
+    진짜 당첨분인지 대조하는 근거이며, redeemed_at으로 재사용을 막는다.
+
+### 권한 규칙 (lib/authz.ts)
+
+- **점주 전용 API** (매출 통계·주문 목록·메뉴 CRUD): 로그인 + `stores.owner_user_id` 일치해야 통과.
+  메뉴 단건 수정·삭제는 그 메뉴가 해당 매장 것인지까지 확인한다.
+- **손님용 API** (메뉴 조회·페어링·매장 정보): 공개.
+- **주문 결제/취소**: 테이블 번호 또는 본인 세션이 일치해야 통과 (주문번호만으로는 불가).
 
 ---
 
@@ -65,7 +85,9 @@ QR-Place는 유저의 과거 주문/방문 통계를 분석해 취향에 맞는 
 ## 로그인 전략
 
 - 비로그인 주문: 로그인 없이 메뉴 조회·주문 100% 가능 (입구 장벽 제로)
-  - localStorage에 익명 세션 ID 발급 → user_id=NULL로 DB 저장
+  - view_logs/orders에 user_id=NULL로 저장하고, 대신 **테이블 번호**로 묶는다.
+  - 단, 익명 세션 ID는 구현하지 않았다 → 비로그인 손님은 재방문해도 개인화가 붙지 않고
+    인기순(콜드 스타트)으로 나온다. 개인화를 받으려면 카카오 로그인이 필요하다.
 - 카카오 로그인 유도 시점: "내 지도에 저장", "룰렛 이벤트" 혜택 버튼 클릭 시
   - 구현: NextAuth.js + 카카오 OAuth Provider 완료
 
@@ -99,10 +121,23 @@ QR-Place는 유저의 과거 주문/방문 통계를 분석해 취향에 맞는 
 - 카카오맵 연동 — react-kakao-maps-sdk + 내 맛집 지도 페이지 (app/stores/map/, NEXT_PUBLIC_KAKAO_MAP_KEY 필요)
 - 점주 대시보드 — 매출·방문자·인기메뉴 통계 차트(Chart.js) 포함 (dashboard/[storeId]/page.tsx)
 - UI 디자인 리뉴얼 — 손님/점주 화면 전체 색감·레이아웃·인터랙션 정리
-- 룰렛 이벤트 UI — 메뉴판 슬롯머신 룰렛 모달 (상품 4종 가중치 랜덤, 로그인 필수, 매장별 하루 1회 제한)
+- 룰렛 이벤트 — 슬롯머신 모달 (상품 4종 가중치, 로그인 필수, 매장별 하루 1회).
+  **당첨 추첨은 서버**가 하고 당첨 메뉴는 0원으로 주문·결제까지 반영된다.
+- 주문·결제 — 장바구니 → 주문 생성 → 모의 결제(카드/카카오페이/현장) → 주문 완료.
+  결제 페이지에서 뒤로가기 시 확인 후 pending 주문을 완전 삭제.
+- 나의 취향 리포트 (app/stores/taste/) — 유저 전체 로그를 태그 가중치로 집계, 관심
+  카테고리 막대그래프 + 한 줄 요약
+- 메뉴 페어링 추천 — 결제완료 주문 order_items 자기조인으로 "함께 많이 시킨 메뉴" top3
+- 원페이지 메뉴판 — 카테고리별 섹션 + 칩 클릭 시 해당 섹션으로 스무스 스크롤
+- 권한 가드 (lib/authz.ts) — 점주 API 소유자 확인, 무료증정 위조 차단, 주문 소유권 확인
+- **Vercel 배포 완료** — Neon Postgres 연결, 카카오 로그인/지도 키 등록
+  → https://qr-place.vercel.app
 
-### 아직 없는 것 (구현 필요)
-1. Vercel 배포 — Postgres(Neon) 전환 + 환경변수 등록 + 실제 배포
+### 아직 없는 것 (남은 과제)
+1. ESLint 설정 (`npm run lint` 스크립트만 있고 설정 파일이 없음)
+2. API 라우트 통합 테스트 (현재 테스트는 순수 함수 + 권한 가드 유닛 테스트 32개)
+3. 조리 상태 알림 (orders.status가 pending/paid/cancelled뿐 — 조리중/준비완료 없음)
+4. 비로그인 손님용 익명 세션 ID (현재는 로그인해야 개인화가 붙음)
 
 ---
 
@@ -116,7 +151,9 @@ QR-Place는 유저의 과거 주문/방문 통계를 분석해 취향에 맞는 
 | 4주차 | (완료) 고객용 모바일 화면 구현 (메뉴판·추천 배너·룰렛) |
 | 5주차 | (완료) 카카오맵 연동 + 맛집 지도 핀 표시 |
 | 6주차 | (완료) 통계 차트(Chart.js) + 카카오 로그인 연동 |
-| 7주차 | Vercel 배포, 최종 테스트·버그 수정·코드 제출 |
+| 7주차 | (완료) Vercel 배포, 최종 테스트·버그 수정·코드 제출 |
+
+배포 후 추가 작업: 취향 리포트·메뉴 페어링 추천(차별점 보강), 권한/보안 보완.
 
 ---
 

@@ -1,13 +1,32 @@
 # QR-Place
 
-`QR-Place-추천기능-스펙.md` 를 구현한 Next.js(App Router) 프로젝트.
+> **배포된 서비스: <https://qr-place.vercel.app>**
+> 점주는 `/dashboard` 에서 카카오 로그인 → 매장 등록 → 테이블 QR 생성,
+> 손님은 그 QR을 스캔해 메뉴판으로 들어온다.
+
+QR 스캔만으로 메뉴 확인부터 통계 분석까지 제공하는 스마트 마케팅 플랫폼 (캡스톤디자인 1인 프로젝트).
 QR 스캔 → 메뉴 조회 → **장바구니 → 결제 → 주문 완료** → 쌓인 주문으로 다음 방문 시 개인화 추천.
 
-추천은 외부 API 없이 **자체 DB 쿼리 기반 룰 기반 가중치 추천**(스펙 방식 A).
+태블릿 테이블오더는 초기 하드웨어 비용 때문에 영세 식당이 못 쓴다는 문제에서 출발했다.
+손님 스마트폰만으로 구동해 설치 비용을 없애고, 쌓인 주문·조회 로그를 태그 가중치로 집계해
+**손님마다 메뉴판 정렬이 달라지는 초개인화**를 얹은 것이 핵심 차별점이다.
+추천은 외부 AI API 없이 **자체 DB 쿼리 기반 룰 기반 가중치 추천**.
+
 결제는 **데모용 모의 결제**(실제 카드 승인·청구 없음). 실제 PG 연동 지점은
 `app/api/orders/[orderId]/pay/route.ts` 주석에 표시.
 
-이 프로젝트는 개인 포트폴리오 사이트와 아무 연동/공유 코드가 없는 독립 프로젝트다.
+## 주요 기능
+
+| 대상 | 기능 |
+|---|---|
+| 손님 | 개인화 메뉴판(카테고리 원페이지 스크롤), 장바구니·주문·모의 결제 |
+| 손님 | 🎰 룰렛 이벤트 — 하루 1회, 당첨 시 추천 메뉴 **0원 무료증정**(서버 추첨) |
+| 손님 | 🍽️ 나의 취향 리포트 — 관심 카테고리 그래프 + 한 줄 요약 |
+| 손님 | "함께 많이 시켜요" — 결제 데이터 기반 메뉴 페어링 추천 |
+| 손님 | 🗺️ 내 맛집 지도 — 카카오맵에 방문 매장 핀 표시 |
+| 점주 | 카카오 로컬 API 장소 검색으로 매장 등록, 메뉴 CRUD |
+| 점주 | 테이블별 QR 생성·이미지 다운로드 |
+| 점주 | 매출·방문자·인기메뉴 통계 대시보드(Chart.js), 결제 대기 주문 실시간 확인 |
 
 DB는 **드라이버 2개**를 지원한다:
 
@@ -45,8 +64,8 @@ DB를 초기화하려면: `npm run db:reset` (`qr-place.db` 삭제 → 다음 �
 ## 테스트
 
 ```bash
-npm test          # 추천 로직 유닛 테스트 (순수 함수, DB 불필요)
-npm run smoke     # SQLite 어댑터 6개 쿼리 스모크 (인메모리)
+npm test          # 유닛 테스트 32개 — 추천 로직·권한 가드·QR·카카오·지도 (DB 불필요)
+npm run smoke     # SQLite 어댑터 쿼리 스모크 (로컬 qr-place.db)
 ```
 
 ## Postgres 로 전환
@@ -82,27 +101,40 @@ lib/
   blurb.ts                     자연어 추천 문구 (스펙 7, 규칙 기반)
   useCart.ts                   장바구니 훅 (localStorage, 테이블 단위)
   mapView.ts                   카카오맵 중심좌표 계산 (순수 함수)
+  authz.ts                     API 권한 가드 (점주 소유권 / 주문 소유권)
+  qr.ts                        테이블별 QR URL 생성 (순수 함수)
+  kakao.ts                     카카오 로컬 검색 응답 정규화 (순수 함수)
   db.ts                        드라이버 선택 + 공용 인터페이스(DbAdapter)
   db.sqlite.ts                 SQLite 어댑터 (기본)
   db.postgres.ts               Vercel Postgres 어댑터
-  __tests__/recommend.test.ts  추천 로직 유닛 테스트
+  __tests__/                   유닛 테스트 (recommend / authz / qr / kakao / mapView)
 app/
   ui/AppHeader.tsx                            공용 헤더(뒤로가기)
+  ui/KakaoLoginCard.tsx                       로그인 필요 화면 공용 카드
   api/logs/route.ts                           POST 조회/주문 로그      (스펙 5)
-  api/orders/route.ts                         POST 주문 생성
+  api/orders/route.ts                         POST 주문 생성 (+무료증정 검증)
   api/orders/[orderId]/route.ts               GET  주문 상세
   api/orders/[orderId]/pay/route.ts           POST 모의 결제 (+추천 로그 적재)
+  api/orders/[orderId]/cancel/route.ts        POST 결제 포기 시 pending 주문 삭제
   api/stores/[storeId]/route.ts               GET  매장 정보
   api/stores/[storeId]/menus/route.ts         GET  개인화 메뉴 목록    (스펙 4-1 / 4-2)
+  api/stores/[storeId]/menus/[menuId]/route.ts GET 페어링 추천 / PUT·DELETE 메뉴 관리
+  api/stores/[storeId]/roulette/route.ts      POST 룰렛 스핀 (서버 추첨)
   api/stores/[storeId]/orders/route.ts        GET  점주용 주문 목록
   api/stores/[storeId]/stats/route.ts         GET  점주 통계(+매출)    (스펙 4-3 / 5)
-  stores/[storeId]/page.tsx                   메뉴판 (카테고리·추천·담기)
+  stores/[storeId]/page.tsx                   메뉴판 (카테고리 섹션·추천·담기)
+  stores/[storeId]/RouletteModal.tsx          룰렛 슬롯머신 모달
   stores/[storeId]/cart/page.tsx              장바구니
   stores/[storeId]/checkout/page.tsx          결제 (수단 선택·카드입력)
   stores/[storeId]/orders/[orderId]/page.tsx  주문 완료
   stores/map/page.tsx                         내 맛집 지도 (로그인 후 방문 매장 핀)
   stores/map/MapCanvas.tsx                    카카오맵 SDK 로딩 + 마커/오버레이 렌더
+  stores/taste/page.tsx                       나의 취향 리포트 (태그 가중치 집계)
+  dashboard/page.tsx                          점주 진입 (로그인 → 내 매장으로)
+  dashboard/new/page.tsx                      매장 등록 (카카오 로컬 검색)
   dashboard/[storeId]/page.tsx                점주 대시보드 (Chart.js)
+  dashboard/[storeId]/menus/page.tsx          메뉴 관리 (CRUD)
+  dashboard/[storeId]/qr/page.tsx             테이블 QR 생성·다운로드
 scripts/
   db.mjs                       Postgres schema+seed 실행기
   smoke.mjs                    SQLite 어댑터 스모크 테스트
@@ -120,18 +152,36 @@ scripts/
 
 ## API
 
-| 메서드 | 경로 | 설명 |
-|---|---|---|
-| GET | `/api/stores/[storeId]` | 매장 정보 |
-| GET | `/api/stores/[storeId]/menus?userId=&days=30` | 개인화 정렬 메뉴 (userId 없으면 인기순) |
-| POST | `/api/logs` | `{ userId?, storeId, menuId, tableNumber?, actionType }` 조회/주문 로그 |
-| POST | `/api/orders` | `{ storeId, tableNumber?, userId?, items:[{menuId,quantity}] }` → pending 주문 |
-| GET | `/api/orders/[orderId]` | 주문 상세 (+ 매장명) |
-| POST | `/api/orders/[orderId]/pay` | `{ paymentMethod: card\|kakaopay\|counter }` → 모의 결제 |
-| GET | `/api/stores/[storeId]/orders?range=7d` | 점주용 주문 목록 |
-| GET | `/api/stores/[storeId]/stats?range=7d` | 방문자 / 인기 메뉴 / 일별 매출 |
+권한 표기 — 🟢 공개 / 🔵 로그인 필요 / 🔴 해당 매장 점주만 / 🟡 주문 소유자만
 
-가격·이름은 `POST /api/orders` 에서 **서버가 DB 기준으로 다시 계산**해 스냅샷으로 저장한다(클라 위조 방지).
+| 메서드 | 경로 | 권한 | 설명 |
+|---|---|---|---|
+| GET | `/api/stores/[storeId]` | 🟢 | 매장 정보 |
+| GET | `/api/stores/[storeId]/menus?userId=&days=30` | 🟢 | 개인화 정렬 메뉴 (userId 없으면 인기순) |
+| GET | `/api/stores/[storeId]/menus/[menuId]` | 🟢 | 함께 많이 시킨 메뉴 top3 (페어링 추천) |
+| POST | `/api/logs` | 🟢 | `{ userId?, storeId, menuId, tableNumber?, actionType }` 조회/주문 로그 |
+| GET | `/api/kakao/search?q=` | 🟢 | 카카오 로컬 장소 검색 (매장 등록용) |
+| POST | `/api/orders` | 🟢 | `{ storeId, tableNumber?, userId?, items:[{menuId,quantity,free?}] }` → pending 주문 |
+| GET | `/api/orders/[orderId]` | 🟢 | 주문 상세 (+ 매장명) |
+| POST | `/api/orders/[orderId]/pay` | 🟡 | `{ paymentMethod, tableNumber }` → 모의 결제 |
+| POST | `/api/orders/[orderId]/cancel` | 🟡 | `{ tableNumber }` → pending 주문 완전 삭제 |
+| POST | `/api/stores` | 🔵 | 매장 등록 (등록한 계정이 소유자가 된다) |
+| POST | `/api/stores/[storeId]/roulette` | 🔵 | 룰렛 스핀 — **서버가 상품 추첨** 후 기록, 하루 1회 |
+| POST | `/api/stores/[storeId]/menus` | 🔴 | 메뉴 생성 |
+| PUT / DELETE | `/api/stores/[storeId]/menus/[menuId]` | 🔴 | 메뉴 수정 / 삭제 |
+| GET | `/api/stores/[storeId]/orders?range=7d` | 🔴 | 점주용 주문 목록 |
+| GET | `/api/stores/[storeId]/stats?range=7d` | 🔴 | 방문자 / 인기 메뉴 / 일별 매출 |
+
+### 신뢰 경계 (클라이언트를 믿지 않는 지점)
+
+- **가격·이름**: `POST /api/orders` 에서 서버가 DB 기준으로 다시 계산해 스냅샷 저장.
+- **무료증정(0원) 항목**: 룰렛 상품 추첨을 서버가 하고 `roulette_spins` 에 기록한 뒤,
+  주문 생성 시 그 기록과 대조해야 통과한다. `redeemed_at` 으로 같은 당첨의 재사용도 막는다.
+- **점주 데이터**: 매출·주문·메뉴 CRUD 는 `stores.owner_user_id` 와 세션이 일치해야 한다.
+  메뉴 단건 조작은 그 메뉴가 해당 매장 것인지까지 확인한다.
+- **주문 결제·취소**: 주문 id 가 순차 정수라, 테이블 번호나 본인 세션이 일치해야 허용한다.
+
+가드는 `lib/authz.ts` 한 곳에 모여 있고, `lib/__tests__/authz.test.ts` 로 통과/차단 양쪽을 고정해뒀다.
 
 ## 스펙과 다른 점 (의도적)
 
@@ -141,7 +191,9 @@ scripts/
 - SQLite 데모 드라이버를 추가 (스펙엔 없지만 "DB 없이 돌아가게" 요구 반영).
   Node 22.5+ 필요.
 - LLM 자연어 추천(스펙 7)은 `lib/blurb.ts` 에 규칙 기반 stub. 순위는 룰 기반 유지.
-- 룰렛 이벤트(스펙 7)는 `recommend.ts` 의 `pickRoulette()` 순수 함수로만 준비.
+- 룰렛 이벤트(스펙 7)는 화면까지 완성 — 당첨 상품 추첨은 서버(`/api/stores/[id]/roulette`)가
+  하고, "추천 메뉴 무료 증정" 당첨분만 주문에서 0원으로 통과된다.
+- **나의 취향 리포트 / 메뉴 페어링 추천**은 스펙엔 없지만 차별점 보강으로 추가.
 - **주문/결제 화면**은 스펙엔 없지만 "실제로 작동 + 결제 UI" 요구로 추가.
   결제는 모의 처리이며, 실제 토스페이먼츠/카카오페이 연동은
   `app/api/orders/[orderId]/pay/route.ts` 주석의 절차대로 붙이면 된다.
