@@ -241,6 +241,7 @@ export default function DashboardPage() {
         </div>
       </div>
 
+      <div className="dash-grid">
       <div className="chart-box">
         <h3>일별 매출</h3>
         <div style={{ position: "relative", height: 240 }}>
@@ -269,7 +270,7 @@ export default function DashboardPage() {
         </div>
       </div>
 
-      <div className="chart-box">
+      <div className="chart-box wide">
         <h3>최근 주문</h3>
         {orders.length === 0 ? (
           <p className="muted">주문이 없습니다.</p>
@@ -320,6 +321,7 @@ export default function DashboardPage() {
             </table>
           </div>
         )}
+      </div>
       </div>
     </>
   );
