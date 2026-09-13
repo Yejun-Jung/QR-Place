@@ -14,6 +14,7 @@ import { useCart, won } from "@/lib/useCart";
 import type { Menu, RankedMenu, Store } from "@/lib/types";
 import RouletteModal from "./RouletteModal";
 import KakaoIcon from "@/app/ui/KakaoIcon";
+import { usePolling } from "@/app/ui/usePolling";
 
 /** 점주가 처리한 주문을 손님에게 알리기 위한 최소 정보 */
 interface OrderNotice {
@@ -107,52 +108,40 @@ function MenuBoard() {
       .catch((e) => setError(`메뉴를 불러오지 못했습니다 (${e.message})`));
   }, [storeId, effectiveUserId]);
 
-  // 점주가 주문을 완료/거절하면 메뉴판에 바로 알려준다.
-  // 대시보드와 같은 폴링 방식 — 탭이 보일 때만 10초마다 내 주문 상태를 확인한다.
-  useEffect(() => {
-    if (!table) return; // 테이블을 모르면 내 주문을 특정할 수 없다
-    let cancelled = false;
-
-    const check = () => {
-      fetch(`/api/stores/${storeId}/orders/mine?table=${encodeURIComponent(table)}&range=1d`)
-        .then((r) => (r.ok ? r.json() : Promise.reject(new Error(String(r.status)))))
-        .then((d: { orders: { id: number; status: string; items_summary: string | null }[] }) => {
-          if (cancelled) return;
-          const seen = readSeen(storeId);
-          const fresh = d.orders.filter(
-            (o) =>
-              (o.status === "served" || o.status === "rejected") &&
-              !seen.includes(o.id),
-          );
-          if (fresh.length === 0) return;
-          setNotices((prev) => {
-            const known = new Set(prev.map((n) => n.id));
-            const added = fresh
-              .filter((o) => !known.has(o.id))
-              .map((o) => ({
-                id: o.id,
-                status: o.status as "served" | "rejected",
-                items: o.items_summary ?? `주문 #${o.id}`,
-              }));
-            return added.length ? [...prev, ...added] : prev;
-          });
-        })
-        .catch(() => {
-          /* 알림은 부가 기능이라 실패해도 메뉴판은 그대로 쓴다 */
-        });
+  // 점주가 주문을 완료/거절하면 메뉴판에 알려준다.
+  // 점주 처리를 기다리는(=결제됐지만 아직 미처리) 주문이 있으면 2.5초 간격으로,
+  // 없으면 15초 간격으로 확인한다 (usePolling).
+  usePolling(async () => {
+    if (!table) return false; // 테이블을 모르면 내 주문을 특정할 수 없다
+    const r = await fetch(
+      `/api/stores/${storeId}/orders/mine?table=${encodeURIComponent(table)}&range=1d`,
+    );
+    if (!r.ok) return false;
+    const d = (await r.json()) as {
+      orders: { id: number; status: string; items_summary: string | null }[];
     };
 
-    const checkIfVisible = () => {
-      if (!document.hidden) check();
-    };
-    check();
-    const interval = setInterval(checkIfVisible, 10000);
-    document.addEventListener("visibilitychange", checkIfVisible);
-    return () => {
-      cancelled = true;
-      clearInterval(interval);
-      document.removeEventListener("visibilitychange", checkIfVisible);
-    };
+    const seen = readSeen(storeId);
+    const fresh = d.orders.filter(
+      (o) =>
+        (o.status === "served" || o.status === "rejected") &&
+        !seen.includes(o.id),
+    );
+    if (fresh.length > 0) {
+      setNotices((prev) => {
+        const known = new Set(prev.map((n) => n.id));
+        const added = fresh
+          .filter((o) => !known.has(o.id))
+          .map((o) => ({
+            id: o.id,
+            status: o.status as "served" | "rejected",
+            items: o.items_summary ?? `주문 #${o.id}`,
+          }));
+        return added.length ? [...prev, ...added] : prev;
+      });
+    }
+    // 아직 점주가 안 본 주문이 있으면 계속 빠르게 확인한다
+    return d.orders.some((o) => o.status === "paid");
   }, [storeId, table]);
 
   /** 알림을 닫으면 기기에 기억해서 다시 안 뜨게 한다 */
