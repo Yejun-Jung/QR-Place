@@ -57,28 +57,51 @@ export default function QrPage() {
       <AppHeader title="QR 코드 생성" sub={`매장 ${storeId}`} />
 
       <div className="section">
-        <label>
-          테이블 개수
-          <input
-            type="number"
-            min={1}
-            max={100}
-            value={tableCount}
-            onChange={(e) => setTableCount(Number(e.target.value))}
-            style={{ marginLeft: 8, width: 80 }}
-          />
-        </label>
-        <button className="btn" style={{ marginTop: 12 }} onClick={generate}>
-          생성
-        </button>
+        <div className="qr-form">
+          <div className="intro">
+            <h3>테이블 QR 만들기</h3>
+            <p className="muted">
+              테이블 수만큼 QR을 만들어 인쇄한 뒤 각 자리에 두세요. 손님이
+              스캔하면 그 테이블 번호로 주문이 들어옵니다.
+            </p>
+          </div>
+
+          <div className="count-field">
+            <label className="field" htmlFor="tableCount">
+              테이블 개수 (1~100)
+            </label>
+            <input
+              id="tableCount"
+              className="inp"
+              type="number"
+              min={1}
+              max={100}
+              value={tableCount}
+              onChange={(e) => setTableCount(Number(e.target.value))}
+            />
+          </div>
+
+          <button className="btn" onClick={generate}>
+            QR 생성
+          </button>
+        </div>
       </div>
 
       {tables && (
-        <div className="qr-grid">
-          {tables.map((t) => (
-            <QrCard key={t} storeId={storeId} table={t} />
-          ))}
-        </div>
+        <>
+          <div className="section" style={{ paddingBottom: 0 }}>
+            <div className="list-head">
+              <span className="list-head-label">
+                생성된 QR {tables.length}개 · 카드마다 따로 내려받을 수 있어요
+              </span>
+            </div>
+          </div>
+          <div className="qr-grid">
+            {tables.map((t) => (
+              <QrCard key={t} storeId={storeId} table={t} />
+            ))}
+          </div>
+        </>
       )}
     </>
   );

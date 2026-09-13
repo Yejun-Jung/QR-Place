@@ -116,6 +116,47 @@
 }
 
 /* ── QR 코드 생성 ── */
+/* 설명 · 개수 입력 · 버튼을 한 카드에 묶는다. 좁아지면 세로로 쌓인다. */
+.qr-form {
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow);
+  padding: 18px;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  gap: 14px;
+}
+.qr-form .intro {
+  flex: 1 1 280px;
+}
+.qr-form .intro h3 {
+  margin: 0 0 4px;
+  font-size: 1rem;
+}
+.qr-form .intro .muted {
+  margin: 0;
+  line-height: 1.5;
+}
+.qr-form .count-field {
+  width: 150px;
+  flex-shrink: 0;
+}
+/* .btn 은 기본이 width:100% 라, 여기서는 내용에 맞춘 폭으로 되돌린다 */
+.qr-form .btn {
+  width: auto;
+  flex-shrink: 0;
+  padding: 12px 24px;
+}
+/* 좁은 화면에서는 입력과 버튼을 한 줄 전체로 */
+@media (max-width: 620px) {
+  .qr-form .count-field,
+  .qr-form .btn {
+    width: 100%;
+  }
+}
+
 .qr-grid {
   display: grid;
   /* 모바일 2개 → 넓어지면 자동으로 더 많이 */
