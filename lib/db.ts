@@ -94,7 +94,8 @@ export function parseRangeDays(value: string | null, fallback = 30): number {
   return Number.isFinite(n) && n > 0 ? n : fallback;
 }
 
-function usePostgres(): boolean {
+// 이름을 use* 로 두면 React 훅 규칙(react-hooks/rules-of-hooks)이 훅으로 오인한다
+function shouldUsePostgres(): boolean {
   const driver = process.env.DB_DRIVER?.toLowerCase();
   if (driver === "postgres" || driver === "pg") return true;
   if (driver === "sqlite") return false;
@@ -104,7 +105,7 @@ function usePostgres(): boolean {
 let adapterPromise: Promise<DbAdapter> | null = null;
 function getAdapter(): Promise<DbAdapter> {
   if (!adapterPromise) {
-    adapterPromise = usePostgres()
+    adapterPromise = shouldUsePostgres()
       ? import("./db.postgres").then((m) => m.postgresAdapter)
       : import("./db.sqlite").then((m) => m.sqliteAdapter);
   }

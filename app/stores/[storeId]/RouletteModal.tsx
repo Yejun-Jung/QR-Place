@@ -88,7 +88,6 @@ export default function RouletteModal({
     return () => {
       cancelled = true;
     };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [storeId]);
 
   return (

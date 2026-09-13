@@ -1,0 +1,137 @@
+/* ── 대시보드 (PC 폭) ── */
+.dash {
+  max-width: 900px;
+  margin: 0 auto;
+  min-height: 100vh;
+  background: var(--bg);
+  padding-bottom: 60px;
+}
+.kpi-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 10px;
+  padding: 0 16px;
+}
+.kpi {
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  padding: 14px;
+  box-shadow: var(--shadow);
+}
+.kpi .label {
+  font-size: 0.75rem;
+  color: var(--muted);
+}
+.kpi .value {
+  font-size: 1.05rem;
+  font-weight: 700;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  margin-top: 4px;
+}
+.chart-box {
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  padding: 16px;
+  margin: 12px 16px;
+  box-shadow: var(--shadow);
+}
+.chart-box h3 {
+  font-size: 0.95rem;
+  margin: 0 0 12px;
+}
+.table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.85rem;
+}
+.table th,
+.table td {
+  text-align: left;
+  padding: 10px 8px;
+  border-bottom: 1px solid var(--line);
+  white-space: nowrap;
+}
+.table th {
+  color: var(--muted);
+  font-weight: 600;
+}
+.seg {
+  display: inline-flex;
+  gap: 6px;
+  margin: 12px 16px 0;
+}
+.seg button {
+  border: 1px solid var(--line);
+  background: var(--surface);
+  border-radius: 8px;
+  padding: 6px 12px;
+  font-size: 0.85rem;
+  cursor: pointer;
+}
+.seg button.active {
+  background: var(--brand);
+  border-color: var(--brand);
+  color: #fff;
+  font-weight: 600;
+}
+
+.empty {
+  text-align: center;
+  color: var(--muted);
+  padding: 60px 20px;
+}
+
+/* ── QR 코드 생성 ── */
+.qr-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 10px;
+  padding: 0 16px 16px;
+}
+.qr-card {
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  padding: 12px;
+  text-align: center;
+  box-shadow: var(--shadow);
+  transition: transform 0.18s ease, box-shadow 0.18s ease;
+}
+.qr-card canvas {
+  width: 100%;
+  height: auto;
+}
+.qr-card .label {
+  font-weight: 600;
+  margin-top: 8px;
+}
+.qr-card .url {
+  font-size: 0.72rem;
+  color: var(--muted);
+  word-break: break-all;
+  margin: 4px 0 10px;
+}
+
+@media (hover: hover) {
+  .menu-row:hover,
+  .qr-card:hover,
+  .pay-method:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 16px rgba(0, 0, 0, 0.08);
+  }
+}
+
+ul.plain {
+  list-style: none;
+  padding: 0 16px;
+  margin: 0;
+}
+ul.plain li {
+  padding: 12px 0;
+  border-bottom: 1px solid var(--line);
+}
+

@@ -1,0 +1,158 @@
+/* ── 추천 배너 ── */
+.blurb {
+  margin: 14px 16px;
+  background: var(--brand-soft);
+  border: 1px solid #fed7aa;
+  color: var(--brand-dark);
+  padding: 12px 14px;
+  border-radius: var(--radius);
+  font-size: 0.9rem;
+}
+
+/* ── 카테고리 칩 ── */
+.chips {
+  position: sticky;
+  top: 53px; /* .app-header 높이 바로 아래 */
+  z-index: 19;
+  background: var(--bg);
+  display: flex;
+  gap: 8px;
+  overflow-x: auto;
+  padding: 8px 16px 12px;
+  -webkit-overflow-scrolling: touch;
+}
+.chip {
+  flex: none;
+  border: 1px solid var(--line);
+  background: var(--surface);
+  color: var(--muted);
+  border-radius: 999px;
+  padding: 6px 14px;
+  font-size: 0.85rem;
+  cursor: pointer;
+  white-space: nowrap;
+}
+.chip.active {
+  background: var(--brand);
+  border-color: var(--brand);
+  color: #fff;
+  font-weight: 600;
+}
+
+/* ── 메뉴 행 ── */
+.menu-list {
+  padding: 0 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+.menu-row {
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  padding: 14px;
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  cursor: pointer;
+  box-shadow: var(--shadow);
+  transition: transform 0.18s ease, box-shadow 0.18s ease;
+}
+.menu-row.rec {
+  border-color: #fdba74;
+}
+.menu-row .name {
+  font-weight: 600;
+}
+.menu-row .desc {
+  color: var(--muted);
+  font-size: 0.82rem;
+  margin-top: 3px;
+}
+.menu-row .meta {
+  color: var(--muted);
+  font-size: 0.76rem;
+  margin-top: 6px;
+}
+.menu-row .price {
+  font-weight: 700;
+  white-space: nowrap;
+}
+.badge {
+  display: inline-block;
+  font-size: 0.68rem;
+  font-weight: 700;
+  color: var(--brand-dark);
+  background: #ffedd5;
+  border-radius: 999px;
+  padding: 2px 8px;
+  margin-bottom: 5px;
+}
+.in-cart {
+  font-size: 0.72rem;
+  font-weight: 700;
+  color: var(--brand);
+  margin-left: 6px;
+}
+
+/* ── 바텀시트 ── */
+.sheet-backdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.4);
+  z-index: 40;
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+}
+.sheet {
+  width: 100%;
+  max-width: 460px;
+  background: var(--surface);
+  border-radius: 18px 18px 0 0;
+  padding: 20px 16px calc(16px + env(safe-area-inset-bottom));
+  animation: slideUp 0.18s ease-out;
+}
+@keyframes slideUp {
+  from {
+    transform: translateY(100%);
+  }
+}
+.sheet h3 {
+  margin: 0 0 4px;
+  font-size: 1.15rem;
+}
+.sheet .desc {
+  color: var(--muted);
+  font-size: 0.88rem;
+  margin-bottom: 16px;
+}
+
+/* ── 메뉴 페어링 추천 ("함께 많이 시켜요") ── */
+.paired {
+  margin-top: 18px;
+  border-top: 1px solid var(--line);
+  padding-top: 14px;
+}
+.paired-title {
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: var(--muted);
+  margin-bottom: 8px;
+}
+.paired-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 0;
+}
+.paired-name {
+  flex: 1;
+  font-size: 0.9rem;
+  font-weight: 600;
+}
+.paired-price {
+  color: var(--muted);
+  font-size: 0.82rem;
+}
+
