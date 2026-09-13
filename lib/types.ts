@@ -16,6 +16,8 @@ export interface Menu {
   price: number;
   description: string | null;
   tags: MenuTags;
+  /** 메뉴 사진 (Vercel Blob URL). 없으면 메뉴판에 사진 없이 표시된다. */
+  image_url: string | null;
 }
 
 /** 메뉴 생성/수정 시 클라이언트가 보내는 입력값 */
@@ -24,6 +26,7 @@ export interface MenuInput {
   price: number;
   description: string | null;
   tags: MenuTags;
+  imageUrl: string | null;
 }
 
 /** 추천 계산에 넣는 최소 로그 형태 (view_logs + menus.tags 조인 결과) */

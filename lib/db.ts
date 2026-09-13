@@ -84,6 +84,14 @@ export interface DbAdapter {
     days: number,
     limit?: number,
   ): Promise<OrderSummaryRow[]>;
+  /** 손님이 보는 "내 주문 기록" — 같은 테이블의 주문 + (로그인 시) 본인 주문 */
+  listCustomerOrders(
+    storeId: number,
+    tableNumber: string | null,
+    userId: number | null,
+    days: number,
+    limit?: number,
+  ): Promise<OrderSummaryRow[]>;
   getRevenueByDay(storeId: number, days: number): Promise<RevenueRow[]>;
 }
 
@@ -203,6 +211,21 @@ export async function cancelOrder(orderId: number) {
 }
 export async function listOrders(storeId: number, days: number, limit = 50) {
   return (await getAdapter()).listOrders(storeId, days, limit);
+}
+export async function listCustomerOrders(
+  storeId: number,
+  tableNumber: string | null,
+  userId: number | null,
+  days: number,
+  limit = 20,
+) {
+  return (await getAdapter()).listCustomerOrders(
+    storeId,
+    tableNumber,
+    userId,
+    days,
+    limit,
+  );
 }
 export async function getRevenueByDay(storeId: number, days: number) {
   return (await getAdapter()).getRevenueByDay(storeId, days);

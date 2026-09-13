@@ -25,9 +25,12 @@ CREATE TABLE IF NOT EXISTS menus (
   name        VARCHAR NOT NULL,
   price       INTEGER NOT NULL DEFAULT 0,
   description TEXT,
-  tags        JSONB NOT NULL DEFAULT '{}'::jsonb
+  tags        JSONB NOT NULL DEFAULT '{}'::jsonb,
   -- 예: {"category": "찌개", "spicy": 3, "price_range": "mid"}
+  image_url   TEXT
 );
+
+ALTER TABLE menus ADD COLUMN IF NOT EXISTS image_url TEXT;
 
 CREATE TABLE IF NOT EXISTS view_logs (
   id           SERIAL PRIMARY KEY,

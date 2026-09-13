@@ -78,13 +78,9 @@ function CartView() {
       ) : (
         <>
           <div className="section" style={{ paddingBottom: 0 }}>
-            <div
-              style={{
-                display: "flex",
-                justifyContent: "flex-end",
-                marginBottom: 4,
-              }}
-            >
+            {/* 목록 머리글 — 왼쪽 개수 / 오른쪽 전체삭제로 균형을 잡는다 */}
+            <div className="list-head">
+              <span className="list-head-label">담은 메뉴 {cart.lines.length}개</span>
               <button
                 className="mini-action"
                 onClick={() => {

@@ -13,10 +13,10 @@ import {
 } from "../recommend";
 
 const menus: Menu[] = [
-  { id: 1, store_id: 1, name: "김치찌개", price: 9000, description: null, tags: { category: "찌개", spicy: 3, price_range: "mid" } },
-  { id: 2, store_id: 1, name: "된장찌개", price: 8000, description: null, tags: { category: "찌개", spicy: 1, price_range: "mid" } },
-  { id: 3, store_id: 1, name: "제육볶음", price: 11000, description: null, tags: { category: "볶음", spicy: 4, price_range: "mid" } },
-  { id: 4, store_id: 1, name: "갈비탕", price: 13000, description: null, tags: { category: "탕", spicy: 0, price_range: "high" } },
+  { id: 1, store_id: 1, name: "김치찌개", price: 9000, description: null, tags: { category: "찌개", spicy: 3, price_range: "mid" }, image_url: null },
+  { id: 2, store_id: 1, name: "된장찌개", price: 8000, description: null, tags: { category: "찌개", spicy: 1, price_range: "mid" }, image_url: null },
+  { id: 3, store_id: 1, name: "제육볶음", price: 11000, description: null, tags: { category: "볶음", spicy: 4, price_range: "mid" }, image_url: null },
+  { id: 4, store_id: 1, name: "갈비탕", price: 13000, description: null, tags: { category: "탕", spicy: 0, price_range: "high" }, image_url: null },
 ];
 
 describe("tagTokens", () => {
