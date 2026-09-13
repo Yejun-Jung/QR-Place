@@ -18,29 +18,41 @@
   padding: 0 16px;
 }
 
-/* 차트/표 카드 배치 — 모바일 1열, 900px↑ 2열, 1400px↑ 3열 */
+/* 차트 영역(.dash-main) + 최근 주문(.dash-side)
+   - 좁은 화면: 차트 → 최근 주문 순으로 세로로 쌓는다
+   - 1200px↑: 왼쪽 차트, 오른쪽 최근 주문 사이드 칼럼 */
 .dash-grid {
   display: grid;
   grid-template-columns: 1fr;
   gap: 12px;
   padding: 12px 16px;
+  align-items: start;
+}
+@media (min-width: 1200px) {
+  .dash-grid {
+    grid-template-columns: minmax(0, 1fr) minmax(460px, 36%);
+  }
+}
+.dash-main {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 12px;
+  min-width: 0; /* 차트 캔버스가 그리드 칸을 밀어내지 않게 */
 }
 @media (min-width: 900px) {
-  .dash-grid {
+  .dash-main {
     grid-template-columns: repeat(2, 1fr);
   }
-}
-@media (min-width: 1400px) {
-  .dash-grid {
-    grid-template-columns: repeat(3, 1fr);
+  /* 세 번째(인기 메뉴)는 두 칸을 다 써서 빈 칸이 안 생기게 */
+  .dash-main > .chart-box:nth-child(3) {
+    grid-column: 1 / -1;
   }
+}
+.dash-side {
+  min-width: 0;
 }
 .dash-grid .chart-box {
   margin: 0;
-}
-/* 표처럼 가로로 넓어야 하는 카드는 한 줄 전체를 쓴다 */
-.chart-box.wide {
-  grid-column: 1 / -1;
 }
 .kpi {
   background: var(--surface);
