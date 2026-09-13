@@ -12,6 +12,7 @@ import type {
   NewOrderInput,
   Order,
   OrderItem,
+  CustomerOrderRow,
   OrderSummaryRow,
   PaymentMethod,
   PopularMenuRow,
@@ -342,13 +343,15 @@ export const postgresAdapter: DbAdapter = {
     userId,
     days,
     limit = 20,
-  ): Promise<OrderSummaryRow[]> {
+  ): Promise<CustomerOrderRow[]> {
     // 테이블 번호를 아는 사람(= 그 테이블 손님) 기준 + 로그인했다면 본인 주문도
     if (tableNumber == null && userId == null) return [];
-    const { rows } = await sql<OrderSummaryRow>`
+    const { rows } = await sql<CustomerOrderRow>`
       SELECT o.id, o.table_number, o.status, o.payment_method, o.total_amount,
              o.created_at,
-             COALESCE((SELECT SUM(quantity)::int FROM order_items WHERE order_id = o.id), 0) AS item_count
+             COALESCE((SELECT SUM(quantity)::int FROM order_items WHERE order_id = o.id), 0) AS item_count,
+             (SELECT string_agg(name || ' x' || quantity, ', ')
+                FROM order_items WHERE order_id = o.id) AS items_summary
       FROM orders o
       WHERE o.store_id = ${storeId}
         AND o.created_at >= NOW() - ${days} * INTERVAL '1 day'

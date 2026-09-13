@@ -20,6 +20,8 @@ interface OrderRow {
   total_amount: number;
   item_count: number;
   created_at: string;
+  /** "통닭 x1, 모듬감자튀김 x2" */
+  items_summary: string | null;
 }
 
 function HistoryView() {
@@ -78,41 +80,65 @@ function HistoryView() {
       )}
 
       {orders && orders.length > 0 && (
-        <div className="section">
-          <div className="list-head">
-            <span className="list-head-label">최근 7일 · {orders.length}건</span>
+        <>
+          <div className="section">
+            <div className="list-head">
+              <span className="list-head-label">최근 7일 · {orders.length}건</span>
+            </div>
+            {orders.map((o) => (
+              <Link
+                key={o.id}
+                className="history-row"
+                href={`/stores/${storeId}/orders/${o.id}${nextQs}`}
+              >
+                <div>
+                  <div className="name">
+                    주문 #{o.id}
+                    <span className={`status ${o.status}`}>
+                      {ORDER_STATUS_LABEL[o.status]}
+                    </span>
+                  </div>
+                  {o.items_summary && (
+                    <div className="items">{o.items_summary}</div>
+                  )}
+                  <div className="meta">
+                    {new Date(o.created_at).toLocaleString("ko-KR", {
+                      month: "long",
+                      day: "numeric",
+                      hour: "2-digit",
+                      minute: "2-digit",
+                    })}
+                    {" · "}
+                    {o.item_count}개
+                    {o.payment_method
+                      ? ` · ${PAYMENT_METHOD_LABEL[o.payment_method]}`
+                      : ""}
+                  </div>
+                </div>
+                <div className="price">{won(o.total_amount)}</div>
+              </Link>
+            ))}
           </div>
-          {orders.map((o) => (
-            <Link
-              key={o.id}
-              className="history-row"
-              href={`/stores/${storeId}/orders/${o.id}${nextQs}`}
-            >
-              <div>
-                <div className="name">
-                  주문 #{o.id}
-                  <span className={`status ${o.status}`}>
-                    {ORDER_STATUS_LABEL[o.status]}
-                  </span>
-                </div>
-                <div className="meta">
-                  {new Date(o.created_at).toLocaleString("ko-KR", {
-                    month: "long",
-                    day: "numeric",
-                    hour: "2-digit",
-                    minute: "2-digit",
-                  })}
-                  {" · "}
-                  {o.item_count}개
-                  {o.payment_method
-                    ? ` · ${PAYMENT_METHOD_LABEL[o.payment_method]}`
-                    : ""}
-                </div>
-              </div>
-              <div className="price">{won(o.total_amount)}</div>
+
+          <div className="summary" style={{ marginTop: 8 }}>
+            <div className="row">
+              <span>주문 수</span>
+              <span>{orders.length}건</span>
+            </div>
+            <div className="row total">
+              <span>합계</span>
+              <span>
+                {won(orders.reduce((sum, o) => sum + o.total_amount, 0))}
+              </span>
+            </div>
+          </div>
+
+          <div style={{ padding: 16 }}>
+            <Link className="btn ghost" href={`/stores/${storeId}${nextQs}`}>
+              메뉴로 돌아가기
             </Link>
-          ))}
-        </div>
+          </div>
+        </>
       )}
     </>
   );

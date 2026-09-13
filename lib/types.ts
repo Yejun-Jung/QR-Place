@@ -157,6 +157,12 @@ export interface OrderSummaryRow {
   created_at: string;
 }
 
+/** 손님용 주문 기록 — 뭘 시켰는지 바로 보이게 메뉴 요약을 함께 준다 */
+export interface CustomerOrderRow extends OrderSummaryRow {
+  /** "통닭 x1, 모듬감자튀김 x2" (주문 시점 스냅샷 이름) */
+  items_summary: string | null;
+}
+
 /** 오늘의 룰렛 스핀 기록 — 무료 증정 항목이 진짜 당첨분인지 서버가 대조하는 근거 */
 export interface RouletteSpin {
   id: number;

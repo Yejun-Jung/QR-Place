@@ -9,6 +9,7 @@
  * 자동 생성한다. 즉 별도 DB 세팅 없이 `npm run dev` 만으로 데모가 돈다.
  */
 import type {
+  CustomerOrderRow,
   DailyVisitorRow,
   InsertLogInput,
   LogEntry,
@@ -91,7 +92,7 @@ export interface DbAdapter {
     userId: number | null,
     days: number,
     limit?: number,
-  ): Promise<OrderSummaryRow[]>;
+  ): Promise<CustomerOrderRow[]>;
   getRevenueByDay(storeId: number, days: number): Promise<RevenueRow[]>;
 }
 
