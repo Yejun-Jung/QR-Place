@@ -4,7 +4,17 @@ import KakaoLoginCard from "@/app/ui/KakaoLoginCard";
 import { getVisitedStoresByUser } from "@/lib/db";
 import MapCanvas from "./MapCanvas";
 
-export default async function MyMapPage() {
+/**
+ * from/table: 어느 매장의 몇 번 테이블에서 이 지도로 들어왔는지.
+ * 그 매장으로 돌아갈 때만 테이블 번호를 되돌려주기 위해 들고 다닌다
+ * (다른 매장에 남의 테이블 번호를 붙이면 주문이 엉뚱한 자리로 찍힌다).
+ */
+export default async function MyMapPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ from?: string; table?: string }>;
+}) {
+  const { from, table } = await searchParams;
   const session = await auth();
 
   if (!session?.user?.id) {
@@ -37,7 +47,11 @@ export default async function MyMapPage() {
   return (
     <div className="map-page">
       <AppHeader title="내 맛집 지도" sub={`${stores.length}곳`} />
-      <MapCanvas stores={stores} />
+      <MapCanvas
+        stores={stores}
+        fromStoreId={from ?? null}
+        table={table ?? null}
+      />
     </div>
   );
 }

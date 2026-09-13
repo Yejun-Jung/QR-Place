@@ -181,7 +181,12 @@ function MenuBoard() {
             <Link href="/stores/taste" className="mini-action">
               🍽️ 나의 취향
             </Link>
-            <Link href="/stores/map" className="mini-action">
+            {/* 어느 매장 몇 번 테이블에서 왔는지 넘겨서, 지도에서 이 매장으로
+                돌아올 때 테이블 번호가 유지되게 한다 */}
+            <Link
+              href={`/stores/map?from=${storeId}${table ? `&table=${encodeURIComponent(table)}` : ""}`}
+              className="mini-action"
+            >
               🗺️ 내 맛집 지도
             </Link>
             <button
