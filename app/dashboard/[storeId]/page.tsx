@@ -16,6 +16,7 @@ import {
   Tooltip,
 } from "chart.js";
 import { Bar, Line } from "react-chartjs-2";
+import { useStoreName } from "@/app/ui/useStoreName";
 import { won } from "@/lib/useCart";
 import {
   ORDER_STATUS_LABEL,
@@ -54,6 +55,7 @@ interface OrderRow {
   total_amount: number;
   item_count: number;
   created_at: string;
+  items_summary: string | null;
 }
 
 export default function DashboardPage() {
@@ -62,15 +64,8 @@ export default function DashboardPage() {
   const [stats, setStats] = useState<Stats | null>(null);
   const [orders, setOrders] = useState<OrderRow[]>([]);
   const [error, setError] = useState<string | null>(null);
-  const [storeName, setStoreName] = useState<string | null>(null);
-
-  // 매장 이름은 자주 안 바뀌니 폴링과 별개로 한 번만 불러온다.
-  useEffect(() => {
-    fetch(`/api/stores/${storeId}`)
-      .then((r) => (r.ok ? r.json() : Promise.reject(new Error(String(r.status)))))
-      .then((d) => setStoreName(d.store.name))
-      .catch(() => setStoreName(null));
-  }, [storeId]);
+  // 매장 이름은 자주 안 바뀌니 폴링과 별개로 한 번만 불러온다 (QR·메뉴 관리와 공용)
+  const storeName = useStoreName(storeId);
 
   // 새 주문이 들어오면 자동으로 반영되도록, 대시보드가 열려있는 동안
   // 5초마다 매출/주문을 다시 불러온다(탭이 백그라운드일 땐 쉼).
@@ -121,6 +116,31 @@ export default function DashboardPage() {
       document.removeEventListener("visibilitychange", loadIfVisible);
     };
   }, [storeId, range]);
+
+  // 점주 접수 처리 — 완료(served) / 거절(rejected)
+  const [handling, setHandling] = useState<number | null>(null);
+  const handleOrder = async (orderId: number, status: "served" | "rejected") => {
+    if (status === "rejected" && !confirm(`주문 #${orderId}을(를) 거절할까요?`)) {
+      return;
+    }
+    setHandling(orderId);
+    try {
+      const res = await fetch(`/api/orders/${orderId}/status`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ status }),
+      });
+      if (!res.ok) throw new Error(String(res.status));
+      // 폴링을 기다리지 않고 화면에 바로 반영
+      setOrders((prev) =>
+        prev.map((o) => (o.id === orderId ? { ...o, status } : o)),
+      );
+    } catch (e) {
+      setError(`주문 처리 실패 (${(e as Error).message})`);
+    } finally {
+      setHandling(null);
+    }
+  };
 
   const revenueChart = useMemo(() => {
     const rows = stats?.revenueByDay ?? [];
@@ -281,11 +301,13 @@ export default function DashboardPage() {
                 <tr>
                   <th>#</th>
                   <th>테이블</th>
+                  <th>주문 메뉴</th>
                   <th>수량</th>
                   <th>금액</th>
                   <th>결제</th>
                   <th>상태</th>
                   <th>시각</th>
+                  <th>처리</th>
                 </tr>
               </thead>
               <tbody>
@@ -293,6 +315,7 @@ export default function DashboardPage() {
                   <tr key={o.id}>
                     <td>{o.id}</td>
                     <td>{o.table_number ?? "-"}</td>
+                    <td className="items-cell">{o.items_summary ?? "-"}</td>
                     <td>{o.item_count}</td>
                     <td>{won(o.total_amount)}</td>
                     <td>
@@ -314,6 +337,28 @@ export default function DashboardPage() {
                         hour: "2-digit",
                         minute: "2-digit",
                       })}
+                    </td>
+                    <td>
+                      {o.status === "paid" ? (
+                        <div className="row-actions">
+                          <button
+                            className="mini-action accept"
+                            disabled={handling === o.id}
+                            onClick={() => handleOrder(o.id, "served")}
+                          >
+                            완료
+                          </button>
+                          <button
+                            className="mini-action reject"
+                            disabled={handling === o.id}
+                            onClick={() => handleOrder(o.id, "rejected")}
+                          >
+                            거절
+                          </button>
+                        </div>
+                      ) : (
+                        <span className="muted">-</span>
+                      )}
                     </td>
                   </tr>
                 ))}

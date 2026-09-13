@@ -96,7 +96,23 @@ export interface User {
   nickname: string | null;
 }
 
-export type OrderStatus = "pending" | "paid" | "cancelled";
+/**
+ * pending  결제 전 (장바구니 → 주문 생성 직후)
+ * paid     결제 완료 — 점주 확인 대기
+ * served   점주가 "완료" 처리 (주방에서 준비 중/나감)
+ * rejected 점주가 "거절" 처리 (재료 소진 등)
+ * cancelled 손님이 결제 화면에서 이탈 (실제로는 삭제돼서 거의 안 남는다)
+ */
+export type OrderStatus =
+  | "pending"
+  | "paid"
+  | "served"
+  | "rejected"
+  | "cancelled";
+
+/** 점주가 주문을 처리할 때 고를 수 있는 상태 */
+export const HANDLED_STATUSES = ["served", "rejected"] as const;
+export type HandledStatus = (typeof HANDLED_STATUSES)[number];
 export type PaymentMethod = "card" | "kakaopay" | "counter";
 
 export const PAYMENT_METHOD_LABEL: Record<PaymentMethod, string> = {
@@ -107,7 +123,9 @@ export const PAYMENT_METHOD_LABEL: Record<PaymentMethod, string> = {
 
 export const ORDER_STATUS_LABEL: Record<OrderStatus, string> = {
   pending: "결제 대기",
-  paid: "결제 완료",
+  paid: "접수 대기",
+  served: "준비 완료",
+  rejected: "거절됨",
   cancelled: "취소됨",
 };
 

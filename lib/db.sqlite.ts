@@ -23,7 +23,6 @@ import type {
   Order,
   OrderItem,
   CustomerOrderRow,
-  OrderSummaryRow,
   PaymentMethod,
   PopularMenuRow,
   RevenueRow,
@@ -70,7 +69,7 @@ CREATE TABLE IF NOT EXISTS orders (
   store_id       INTEGER NOT NULL REFERENCES stores(id) ON DELETE CASCADE,
   user_id        INTEGER REFERENCES users(id) ON DELETE SET NULL,
   table_number   TEXT,
-  status         TEXT NOT NULL DEFAULT 'pending' CHECK (status IN ('pending','paid','cancelled')),
+  status         TEXT NOT NULL DEFAULT 'pending' CHECK (status IN ('pending','paid','served','rejected','cancelled')),
   payment_method TEXT CHECK (payment_method IN ('card','kakaopay','counter')),
   total_amount   INTEGER NOT NULL DEFAULT 0,
   created_at     TEXT NOT NULL DEFAULT (datetime('now')),
@@ -685,6 +684,14 @@ export const sqliteAdapter: DbAdapter = {
     db().prepare(`DELETE FROM orders WHERE id=? AND status='pending'`).run(orderId);
   },
 
+  async setOrderStatus(orderId, status) {
+    // 결제된 주문만 접수 처리한다 (아직 결제 전이거나 이미 처리된 건 무시)
+    db()
+      .prepare(`UPDATE orders SET status=? WHERE id=? AND status='paid'`)
+      .run(status, orderId);
+    return this.getOrder(orderId);
+  },
+
   async listCustomerOrders(
     storeId,
     tableNumber,
@@ -721,19 +728,13 @@ export const sqliteAdapter: DbAdapter = {
     return rows.map((r) => ({ ...r, id: Number(r.id) }));
   },
 
-  async listOrders(storeId, days, limit = 50): Promise<OrderSummaryRow[]> {
-    const rows = query<{
-      id: number;
-      table_number: string | null;
-      status: OrderSummaryRow["status"];
-      payment_method: OrderSummaryRow["payment_method"];
-      total_amount: number;
-      item_count: number;
-      created_at: string;
-    }>(
+  async listOrders(storeId, days, limit = 50): Promise<CustomerOrderRow[]> {
+    const rows = query<CustomerOrderRow>(
       `SELECT o.id, o.table_number, o.status, o.payment_method, o.total_amount,
               o.created_at,
-              (SELECT COALESCE(SUM(quantity), 0) FROM order_items WHERE order_id = o.id) AS item_count
+              (SELECT COALESCE(SUM(quantity), 0) FROM order_items WHERE order_id = o.id) AS item_count,
+              (SELECT group_concat(name || ' x' || quantity, ', ')
+                 FROM order_items WHERE order_id = o.id) AS items_summary
        FROM orders o
        WHERE o.store_id = ? AND o.created_at >= datetime('now', ?)
        ORDER BY o.created_at DESC
@@ -750,6 +751,7 @@ export const sqliteAdapter: DbAdapter = {
       total_amount: Number(r.total_amount),
       item_count: Number(r.item_count),
       created_at: String(r.created_at),
+      items_summary: r.items_summary ?? null,
     }));
   },
 

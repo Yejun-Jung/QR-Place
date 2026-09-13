@@ -15,6 +15,31 @@ import type { Menu, RankedMenu, Store } from "@/lib/types";
 import RouletteModal from "./RouletteModal";
 import KakaoIcon from "@/app/ui/KakaoIcon";
 
+/** 점주가 처리한 주문을 손님에게 알리기 위한 최소 정보 */
+interface OrderNotice {
+  id: number;
+  status: "served" | "rejected";
+  items: string;
+}
+
+/** 이미 확인한 알림은 다시 띄우지 않는다 (기기별로 기억) */
+const seenKey = (storeId: string) => `qrplace:seen-orders:${storeId}`;
+const readSeen = (storeId: string): number[] => {
+  try {
+    return JSON.parse(localStorage.getItem(seenKey(storeId)) ?? "[]");
+  } catch {
+    return [];
+  }
+};
+const markSeen = (storeId: string, ids: number[]) => {
+  try {
+    const merged = [...new Set([...readSeen(storeId), ...ids])].slice(-50);
+    localStorage.setItem(seenKey(storeId), JSON.stringify(merged));
+  } catch {
+    /* 사파리 프라이빗 모드 등 — 알림이 한 번 더 떠도 치명적이지 않다 */
+  }
+};
+
 interface MenusResponse {
   store: Store;
   categories: string[];
@@ -42,6 +67,8 @@ function MenuBoard() {
   const [sheetQty, setSheetQty] = useState(1);
   const [paired, setPaired] = useState<Menu[]>([]);
   const [rouletteOpen, setRouletteOpen] = useState(false);
+  /** 점주가 처리(완료/거절)한 주문 알림 — 손님이 닫을 때까지 메뉴판 위에 뜬다 */
+  const [notices, setNotices] = useState<OrderNotice[]>([]);
 
   // table/userId 를 유지한 쿼리스트링
   const nextQs = useMemo(() => {
@@ -79,6 +106,60 @@ function MenuBoard() {
       .then(setData)
       .catch((e) => setError(`메뉴를 불러오지 못했습니다 (${e.message})`));
   }, [storeId, effectiveUserId]);
+
+  // 점주가 주문을 완료/거절하면 메뉴판에 바로 알려준다.
+  // 대시보드와 같은 폴링 방식 — 탭이 보일 때만 10초마다 내 주문 상태를 확인한다.
+  useEffect(() => {
+    if (!table) return; // 테이블을 모르면 내 주문을 특정할 수 없다
+    let cancelled = false;
+
+    const check = () => {
+      fetch(`/api/stores/${storeId}/orders/mine?table=${encodeURIComponent(table)}&range=1d`)
+        .then((r) => (r.ok ? r.json() : Promise.reject(new Error(String(r.status)))))
+        .then((d: { orders: { id: number; status: string; items_summary: string | null }[] }) => {
+          if (cancelled) return;
+          const seen = readSeen(storeId);
+          const fresh = d.orders.filter(
+            (o) =>
+              (o.status === "served" || o.status === "rejected") &&
+              !seen.includes(o.id),
+          );
+          if (fresh.length === 0) return;
+          setNotices((prev) => {
+            const known = new Set(prev.map((n) => n.id));
+            const added = fresh
+              .filter((o) => !known.has(o.id))
+              .map((o) => ({
+                id: o.id,
+                status: o.status as "served" | "rejected",
+                items: o.items_summary ?? `주문 #${o.id}`,
+              }));
+            return added.length ? [...prev, ...added] : prev;
+          });
+        })
+        .catch(() => {
+          /* 알림은 부가 기능이라 실패해도 메뉴판은 그대로 쓴다 */
+        });
+    };
+
+    const checkIfVisible = () => {
+      if (!document.hidden) check();
+    };
+    check();
+    const interval = setInterval(checkIfVisible, 10000);
+    document.addEventListener("visibilitychange", checkIfVisible);
+    return () => {
+      cancelled = true;
+      clearInterval(interval);
+      document.removeEventListener("visibilitychange", checkIfVisible);
+    };
+  }, [storeId, table]);
+
+  /** 알림을 닫으면 기기에 기억해서 다시 안 뜨게 한다 */
+  const dismissNotice = (id: number) => {
+    markSeen(storeId, [id]);
+    setNotices((prev) => prev.filter((n) => n.id !== id));
+  };
 
   const openSheet = (m: RankedMenu) => {
     setOpenMenu(m);
@@ -151,6 +232,23 @@ function MenuBoard() {
           {data.personalized ? "맞춤 추천" : "인기순"}
         </span>
       </header>
+
+      {notices.map((n) => (
+        <div key={n.id} className={`order-notice ${n.status}`}>
+          <span>
+            {n.status === "served"
+              ? `주문한 메뉴(${n.items})가 곧 나가요!`
+              : `주문한 메뉴(${n.items})가 거절되었습니다.`}
+          </span>
+          <button
+            className="notice-close"
+            aria-label="알림 닫기"
+            onClick={() => dismissNotice(n.id)}
+          >
+            ×
+          </button>
+        </div>
+      ))}
 
       {!session?.user && (
         <div

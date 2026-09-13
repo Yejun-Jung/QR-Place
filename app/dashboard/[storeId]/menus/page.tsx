@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useState } from "react";
 import { useParams } from "next/navigation";
 import AppHeader from "@/app/ui/AppHeader";
+import { useStoreName } from "@/app/ui/useStoreName";
 import { won } from "@/lib/useCart";
 import type { Menu, MenuTags, PriceRange } from "@/lib/types";
 
@@ -40,6 +41,7 @@ function toForm(m: Menu): FormState {
 
 export default function MenusPage() {
   const { storeId } = useParams<{ storeId: string }>();
+  const storeName = useStoreName(storeId);
   const [menus, setMenus] = useState<Menu[]>([]);
   const [error, setError] = useState<string | null>(null);
   const [editing, setEditing] = useState<Menu | null>(null);
@@ -156,7 +158,7 @@ export default function MenusPage() {
 
   return (
     <>
-      <AppHeader title="메뉴 관리" sub={`매장 ${storeId}`} />
+      <AppHeader title="메뉴 관리" sub={storeName ?? `매장 ${storeId}`} />
 
       <div className="section">
         {error && <p className="blurb">{error}</p>}

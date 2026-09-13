@@ -10,6 +10,7 @@
  */
 import type {
   CustomerOrderRow,
+  HandledStatus,
   DailyVisitorRow,
   InsertLogInput,
   LogEntry,
@@ -18,7 +19,6 @@ import type {
   NewOrderInput,
   NewStoreInput,
   Order,
-  OrderSummaryRow,
   PaymentMethod,
   PopularMenuRow,
   RevenueRow,
@@ -80,11 +80,13 @@ export interface DbAdapter {
   /** 결제 페이지 이탈 시 취소 — status가 'pending'일 때만 주문(+항목)을 삭제,
    * 기록을 남기지 않는다. 이미 결제/취소됐거나 없는 주문이면 조용히 무시. */
   cancelOrder(orderId: number): Promise<void>;
+  /** 점주 접수 처리: 결제된 주문을 'served'(준비 완료) 또는 'rejected'(거절)로 */
+  setOrderStatus(orderId: number, status: HandledStatus): Promise<Order | null>;
   listOrders(
     storeId: number,
     days: number,
     limit?: number,
-  ): Promise<OrderSummaryRow[]>;
+  ): Promise<CustomerOrderRow[]>;
   /** 손님이 보는 "내 주문 기록" — 같은 테이블의 주문 + (로그인 시) 본인 주문 */
   listCustomerOrders(
     storeId: number,
@@ -209,6 +211,12 @@ export async function payOrder(
 }
 export async function cancelOrder(orderId: number) {
   return (await getAdapter()).cancelOrder(orderId);
+}
+export async function setOrderStatus(
+  orderId: number,
+  status: import("./types").HandledStatus,
+) {
+  return (await getAdapter()).setOrderStatus(orderId, status);
 }
 export async function listOrders(storeId: number, days: number, limit = 50) {
   return (await getAdapter()).listOrders(storeId, days, limit);
