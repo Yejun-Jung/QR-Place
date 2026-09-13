@@ -70,6 +70,10 @@ export async function PUT(
         ? body.description.trim()
         : null,
     tags: (body.tags && typeof body.tags === "object" ? body.tags : {}) as MenuTags,
+    imageUrl:
+      typeof body.imageUrl === "string" && body.imageUrl.trim()
+        ? body.imageUrl.trim()
+        : null,
   };
 
   try {

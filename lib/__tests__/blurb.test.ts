@@ -9,6 +9,7 @@ const menu = (over: Partial<RankedMenu> = {}): RankedMenu => ({
   price: 9000,
   description: null,
   tags: { category: "찌개", spicy: 3 },
+  image_url: null,
   recommendScore: 0,
   popularity: 0,
   ...over,

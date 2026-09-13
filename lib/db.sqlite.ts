@@ -52,7 +52,8 @@ CREATE TABLE IF NOT EXISTS menus (
   name        TEXT NOT NULL,
   price       INTEGER NOT NULL DEFAULT 0,
   description TEXT,
-  tags        TEXT NOT NULL DEFAULT '{}'
+  tags        TEXT NOT NULL DEFAULT '{}',
+  image_url   TEXT
 );
 CREATE TABLE IF NOT EXISTS view_logs (
   id           INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -158,6 +159,13 @@ function db(): DatabaseSync {
   if (!storeCols.some((c) => c.name === "owner_user_id")) {
     d.exec("ALTER TABLE stores ADD COLUMN owner_user_id INTEGER REFERENCES users(id)");
   }
+  // 메뉴 이미지 컬럼 (기존 데모 DB 파일에도 붙여준다)
+  const menuCols = d.prepare("PRAGMA table_info(menus)").all() as {
+    name: string;
+  }[];
+  if (!menuCols.some((c) => c.name === "image_url")) {
+    d.exec("ALTER TABLE menus ADD COLUMN image_url TEXT");
+  }
   // 룰렛 당첨 상품 컬럼 (기존 데모 DB 파일에도 붙여준다)
   const spinCols = d.prepare("PRAGMA table_info(roulette_spins)").all() as {
     name: string;
@@ -221,6 +229,7 @@ interface MenuRow {
   price: number;
   description: string | null;
   tags: string | null;
+  image_url: string | null;
 }
 
 export const sqliteAdapter: DbAdapter = {
@@ -337,7 +346,7 @@ export const sqliteAdapter: DbAdapter = {
 
   async getStoreMenus(storeId) {
     const rows = query<MenuRow>(
-      "SELECT id, store_id, name, price, description, tags FROM menus WHERE store_id = ? ORDER BY id",
+      "SELECT id, store_id, name, price, description, tags, image_url FROM menus WHERE store_id = ? ORDER BY id",
       storeId,
     );
     return rows.map(
@@ -348,13 +357,14 @@ export const sqliteAdapter: DbAdapter = {
         price: r.price,
         description: r.description ?? null,
         tags: parseTags(r.tags),
+        image_url: r.image_url ?? null,
       }),
     );
   },
 
   async getPairedMenus(menuId, limit = 3) {
     const rows = query<MenuRow & { cnt: number }>(
-      `SELECT m.id, m.store_id, m.name, m.price, m.description, m.tags,
+      `SELECT m.id, m.store_id, m.name, m.price, m.description, m.tags, m.image_url,
               SUM(oi2.quantity) AS cnt
        FROM order_items oi1
        JOIN order_items oi2 ON oi2.order_id = oi1.order_id AND oi2.menu_id != oi1.menu_id
@@ -375,6 +385,7 @@ export const sqliteAdapter: DbAdapter = {
         price: r.price,
         description: r.description ?? null,
         tags: parseTags(r.tags),
+        image_url: r.image_url ?? null,
       }),
     );
   },
@@ -480,13 +491,14 @@ export const sqliteAdapter: DbAdapter = {
 
   async createMenu(storeId, input) {
     const row = queryOne<{ id: number }>(
-      `INSERT INTO menus (store_id, name, price, description, tags)
-       VALUES (?, ?, ?, ?, ?) RETURNING id`,
+      `INSERT INTO menus (store_id, name, price, description, tags, image_url)
+       VALUES (?, ?, ?, ?, ?, ?) RETURNING id`,
       storeId,
       input.name,
       input.price,
       input.description,
       JSON.stringify(input.tags ?? {}),
+      input.imageUrl ?? null,
     );
     return {
       id: Number(row.id),
@@ -495,23 +507,26 @@ export const sqliteAdapter: DbAdapter = {
       price: input.price,
       description: input.description,
       tags: input.tags,
+      image_url: input.imageUrl ?? null,
     } satisfies Menu;
   },
 
   async updateMenu(menuId, input) {
     db()
       .prepare(
-        `UPDATE menus SET name = ?, price = ?, description = ?, tags = ? WHERE id = ?`,
+        `UPDATE menus SET name = ?, price = ?, description = ?, tags = ?, image_url = ?
+         WHERE id = ?`,
       )
       .run(
         input.name,
         input.price,
         input.description,
         JSON.stringify(input.tags ?? {}),
+        input.imageUrl ?? null,
         menuId,
       );
     const row = queryOne<MenuRow | undefined>(
-      "SELECT id, store_id, name, price, description, tags FROM menus WHERE id = ?",
+      "SELECT id, store_id, name, price, description, tags, image_url FROM menus WHERE id = ?",
       menuId,
     );
     if (!row) return null;
@@ -522,6 +537,7 @@ export const sqliteAdapter: DbAdapter = {
       price: row.price,
       description: row.description ?? null,
       tags: parseTags(row.tags),
+      image_url: row.image_url ?? null,
     } satisfies Menu;
   },
 
@@ -666,6 +682,40 @@ export const sqliteAdapter: DbAdapter = {
     // order_items는 FK ON DELETE CASCADE라 orders만 지우면 같이 정리됨.
     // pending일 때만 지우고, 이미 결제/취소됐거나 없는 주문은 조용히 무시(멱등).
     db().prepare(`DELETE FROM orders WHERE id=? AND status='pending'`).run(orderId);
+  },
+
+  async listCustomerOrders(
+    storeId,
+    tableNumber,
+    userId,
+    days,
+    limit = 20,
+  ): Promise<OrderSummaryRow[]> {
+    // 테이블 번호를 아는 사람(= 그 테이블 손님) 기준으로 보여주고,
+    // 로그인했다면 본인 주문도 합친다. 둘 다 없으면 보여줄 게 없다.
+    if (tableNumber == null && userId == null) return [];
+    const rows = query<OrderSummaryRow>(
+      `SELECT o.id, o.table_number, o.status, o.payment_method, o.total_amount,
+              o.created_at,
+              (SELECT COALESCE(SUM(quantity), 0) FROM order_items WHERE order_id = o.id) AS item_count
+       FROM orders o
+       WHERE o.store_id = ?
+         AND o.created_at >= datetime('now', ?)
+         AND (
+           (? IS NOT NULL AND o.table_number = ?)
+           OR (? IS NOT NULL AND o.user_id = ?)
+         )
+       ORDER BY o.created_at DESC
+       LIMIT ?`,
+      storeId,
+      since(days),
+      tableNumber,
+      tableNumber,
+      userId,
+      userId,
+      limit,
+    );
+    return rows.map((r) => ({ ...r, id: Number(r.id) }));
   },
 
   async listOrders(storeId, days, limit = 50): Promise<OrderSummaryRow[]> {

@@ -126,7 +126,7 @@ export const postgresAdapter: DbAdapter = {
 
   async getStoreMenus(storeId) {
     const { rows } = await sql<Menu>`
-      SELECT id, store_id, name, price, description, tags
+      SELECT id, store_id, name, price, description, tags, image_url
       FROM menus
       WHERE store_id = ${storeId}
       ORDER BY id
@@ -136,7 +136,7 @@ export const postgresAdapter: DbAdapter = {
 
   async getPairedMenus(menuId, limit = 3) {
     const { rows } = await sql<Menu>`
-      SELECT m.id, m.store_id, m.name, m.price, m.description, m.tags
+      SELECT m.id, m.store_id, m.name, m.price, m.description, m.tags, m.image_url
       FROM order_items oi1
       JOIN order_items oi2 ON oi2.order_id = oi1.order_id AND oi2.menu_id <> oi1.menu_id
       JOIN orders o ON o.id = oi1.order_id AND o.status = 'paid'
@@ -223,9 +223,9 @@ export const postgresAdapter: DbAdapter = {
 
   async createMenu(storeId, input) {
     const { rows } = await sql<Menu>`
-      INSERT INTO menus (store_id, name, price, description, tags)
-      VALUES (${storeId}, ${input.name}, ${input.price}, ${input.description}, ${JSON.stringify(input.tags ?? {})}::jsonb)
-      RETURNING id, store_id, name, price, description, tags
+      INSERT INTO menus (store_id, name, price, description, tags, image_url)
+      VALUES (${storeId}, ${input.name}, ${input.price}, ${input.description}, ${JSON.stringify(input.tags ?? {})}::jsonb, ${input.imageUrl})
+      RETURNING id, store_id, name, price, description, tags, image_url
     `;
     return rows[0];
   },
@@ -234,9 +234,10 @@ export const postgresAdapter: DbAdapter = {
     const { rows } = await sql<Menu>`
       UPDATE menus
       SET name = ${input.name}, price = ${input.price},
-          description = ${input.description}, tags = ${JSON.stringify(input.tags ?? {})}::jsonb
+          description = ${input.description}, tags = ${JSON.stringify(input.tags ?? {})}::jsonb,
+          image_url = ${input.imageUrl}
       WHERE id = ${menuId}
-      RETURNING id, store_id, name, price, description, tags
+      RETURNING id, store_id, name, price, description, tags, image_url
     `;
     return rows[0] ?? null;
   },
@@ -333,6 +334,32 @@ export const postgresAdapter: DbAdapter = {
     // order_items는 FK ON DELETE CASCADE라 orders만 지우면 같이 정리됨.
     // pending일 때만 지우고, 이미 결제/취소됐거나 없는 주문은 조용히 무시(멱등).
     await sql`DELETE FROM orders WHERE id = ${orderId} AND status = 'pending'`;
+  },
+
+  async listCustomerOrders(
+    storeId,
+    tableNumber,
+    userId,
+    days,
+    limit = 20,
+  ): Promise<OrderSummaryRow[]> {
+    // 테이블 번호를 아는 사람(= 그 테이블 손님) 기준 + 로그인했다면 본인 주문도
+    if (tableNumber == null && userId == null) return [];
+    const { rows } = await sql<OrderSummaryRow>`
+      SELECT o.id, o.table_number, o.status, o.payment_method, o.total_amount,
+             o.created_at,
+             COALESCE((SELECT SUM(quantity)::int FROM order_items WHERE order_id = o.id), 0) AS item_count
+      FROM orders o
+      WHERE o.store_id = ${storeId}
+        AND o.created_at >= NOW() - ${days} * INTERVAL '1 day'
+        AND (
+          (${tableNumber}::text IS NOT NULL AND o.table_number = ${tableNumber})
+          OR (${userId}::int IS NOT NULL AND o.user_id = ${userId})
+        )
+      ORDER BY o.created_at DESC
+      LIMIT ${limit}
+    `;
+    return rows;
   },
 
   async listOrders(storeId, days, limit = 50): Promise<OrderSummaryRow[]> {

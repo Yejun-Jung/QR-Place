@@ -13,6 +13,7 @@ interface FormState {
   category: string;
   spicy: string;
   price_range: PriceRange | "";
+  imageUrl: string;
 }
 
 const EMPTY_FORM: FormState = {
@@ -22,6 +23,7 @@ const EMPTY_FORM: FormState = {
   category: "",
   spicy: "0",
   price_range: "",
+  imageUrl: "",
 };
 
 function toForm(m: Menu): FormState {
@@ -32,6 +34,7 @@ function toForm(m: Menu): FormState {
     category: m.tags.category ?? "",
     spicy: String(m.tags.spicy ?? 0),
     price_range: m.tags.price_range ?? "",
+    imageUrl: m.image_url ?? "",
   };
 }
 
@@ -43,6 +46,7 @@ export default function MenusPage() {
   const [showForm, setShowForm] = useState(false);
   const [form, setForm] = useState<FormState>(EMPTY_FORM);
   const [saving, setSaving] = useState(false);
+  const [uploading, setUploading] = useState(false);
 
   const load = useCallback(() => {
     fetch(`/api/stores/${storeId}/menus`)
@@ -73,6 +77,26 @@ export default function MenusPage() {
     setShowForm(true);
   };
 
+  const uploadImage = async (file: File) => {
+    setUploading(true);
+    setError(null);
+    try {
+      const fd = new FormData();
+      fd.append("file", file);
+      const res = await fetch(`/api/stores/${storeId}/upload`, {
+        method: "POST",
+        body: fd,
+      });
+      const json = await res.json();
+      if (!res.ok) throw new Error(json.error ?? String(res.status));
+      setForm((f) => ({ ...f, imageUrl: json.url }));
+    } catch (e) {
+      setError(`이미지 업로드 실패: ${(e as Error).message}`);
+    } finally {
+      setUploading(false);
+    }
+  };
+
   const save = async () => {
     const price = Number(form.price);
     if (!form.name.trim() || !Number.isFinite(price) || price < 0) {
@@ -90,6 +114,7 @@ export default function MenusPage() {
       price,
       description: form.description.trim() || null,
       tags,
+      imageUrl: form.imageUrl.trim() || null,
     };
 
     setSaving(true);
@@ -146,11 +171,17 @@ export default function MenusPage() {
         <div className="menu-list">
           {menus.map((m) => (
             <div key={m.id} className="menu-row" style={{ cursor: "default" }}>
-              <div>
+              <div style={{ display: "flex", gap: 10, alignItems: "center" }}>
+                {m.image_url && (
+                  // eslint-disable-next-line @next/next/no-img-element
+                  <img className="menu-thumb" src={m.image_url} alt="" />
+                )}
+                <div>
                 <div className="name">{m.name}</div>
                 <div className="meta">
                   {won(m.price)} · {m.tags.category ?? "-"} · 맵기{" "}
                   {m.tags.spicy ?? 0}
+                </div>
                 </div>
               </div>
               <div style={{ display: "flex", gap: 6, flexShrink: 0 }}>
@@ -171,6 +202,41 @@ export default function MenusPage() {
           <div className="sheet" onClick={(e) => e.stopPropagation()}>
             <h3>{editing ? "메뉴 수정" : "메뉴 추가"}</h3>
             <div className="card-form">
+              <div>
+                <label className="field">메뉴 사진</label>
+                <div className="img-field">
+                  {form.imageUrl ? (
+                    // eslint-disable-next-line @next/next/no-img-element
+                    <img className="img-preview" src={form.imageUrl} alt="" />
+                  ) : (
+                    <div className="img-preview empty-thumb">사진 없음</div>
+                  )}
+                  <div className="img-actions">
+                    <label className="mini-action">
+                      {uploading ? "올리는 중…" : "사진 선택"}
+                      <input
+                        type="file"
+                        accept="image/*"
+                        hidden
+                        disabled={uploading}
+                        onChange={(e) => {
+                          const f = e.target.files?.[0];
+                          if (f) void uploadImage(f);
+                          e.target.value = "";
+                        }}
+                      />
+                    </label>
+                    {form.imageUrl && (
+                      <button
+                        className="mini-action"
+                        onClick={() => setForm((f) => ({ ...f, imageUrl: "" }))}
+                      >
+                        사진 삭제
+                      </button>
+                    )}
+                  </div>
+                </div>
+              </div>
               <div>
                 <label className="field">메뉴명</label>
                 <input

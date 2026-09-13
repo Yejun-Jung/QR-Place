@@ -233,7 +233,11 @@ function MenuBoard() {
                   className={`menu-row${recommended ? " rec" : ""}`}
                   onClick={() => openSheet(m)}
                 >
-                  <div>
+                  {m.image_url && (
+                    // eslint-disable-next-line @next/next/no-img-element
+                    <img className="menu-thumb" src={m.image_url} alt="" />
+                  )}
+                  <div style={{ flex: 1 }}>
                     {recommended && <span className="badge">추천</span>}
                     <div className="name">
                       {m.name}
@@ -257,6 +261,15 @@ function MenuBoard() {
         </section>
       ))}
 
+      {/* 주문 기록 — 장바구니 바가 떠 있으면 그 위로 밀어 올린다 */}
+      <Link
+        href={`/stores/${storeId}/history${nextQs}`}
+        className={`fab${cart.count > 0 ? " raised" : ""}`}
+        aria-label="주문 기록 보기"
+      >
+        🧾<span>주문 기록</span>
+      </Link>
+
       {cart.count > 0 && (
         <Link
           href={`/stores/${storeId}/cart${nextQs}`}
@@ -272,6 +285,10 @@ function MenuBoard() {
       {openMenu && (
         <div className="sheet-backdrop" onClick={() => setOpenMenu(null)}>
           <div className="sheet" onClick={(e) => e.stopPropagation()}>
+            {openMenu.image_url && (
+              // eslint-disable-next-line @next/next/no-img-element
+              <img className="sheet-photo" src={openMenu.image_url} alt="" />
+            )}
             <h3>{openMenu.name}</h3>
             <div className="desc">
               {openMenu.description ?? "설명이 없습니다."}

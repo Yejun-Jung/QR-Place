@@ -1,3 +1,73 @@
+/* ── 주문 기록 플로팅 버튼 ── */
+.fab {
+  position: fixed;
+  right: max(16px, calc(50% - 230px + 16px)); /* .app(460px) 오른쪽 안쪽에 붙인다 */
+  bottom: 20px;
+  z-index: 30;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 11px 16px;
+  border-radius: 999px;
+  background: var(--text);
+  color: #fff;
+  font-size: 0.82rem;
+  font-weight: 600;
+  text-decoration: none;
+  box-shadow: 0 6px 16px rgba(0, 0, 0, 0.22);
+}
+/* 하단 장바구니 바가 떠 있을 때는 그 위로 */
+.fab.raised {
+  bottom: 88px;
+}
+.fab:active {
+  transform: scale(0.96);
+}
+
+/* 주문 기록 목록 */
+.history-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  padding: 14px;
+  margin-bottom: 10px;
+  box-shadow: var(--shadow);
+  text-decoration: none;
+  color: var(--text);
+}
+.history-row .name {
+  font-weight: 600;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.history-row .meta {
+  color: var(--muted);
+  font-size: 0.78rem;
+  margin-top: 5px;
+}
+.history-row .price {
+  font-weight: 700;
+  white-space: nowrap;
+}
+
+/* 장바구니 목록 머리글 (담은 개수 ↔ 전체삭제) */
+.list-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 8px;
+}
+.list-head-label {
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: var(--muted);
+}
+
 /* ── 하단 고정 장바구니 바 ── */
 .cartbar {
   position: fixed;
