@@ -22,6 +22,7 @@ import type {
   NewOrderInput,
   Order,
   OrderItem,
+  CustomerOrderRow,
   OrderSummaryRow,
   PaymentMethod,
   PopularMenuRow,
@@ -690,14 +691,16 @@ export const sqliteAdapter: DbAdapter = {
     userId,
     days,
     limit = 20,
-  ): Promise<OrderSummaryRow[]> {
+  ): Promise<CustomerOrderRow[]> {
     // 테이블 번호를 아는 사람(= 그 테이블 손님) 기준으로 보여주고,
     // 로그인했다면 본인 주문도 합친다. 둘 다 없으면 보여줄 게 없다.
     if (tableNumber == null && userId == null) return [];
-    const rows = query<OrderSummaryRow>(
+    const rows = query<CustomerOrderRow>(
       `SELECT o.id, o.table_number, o.status, o.payment_method, o.total_amount,
               o.created_at,
-              (SELECT COALESCE(SUM(quantity), 0) FROM order_items WHERE order_id = o.id) AS item_count
+              (SELECT COALESCE(SUM(quantity), 0) FROM order_items WHERE order_id = o.id) AS item_count,
+              (SELECT group_concat(name || ' x' || quantity, ', ')
+                 FROM order_items WHERE order_id = o.id) AS items_summary
        FROM orders o
        WHERE o.store_id = ?
          AND o.created_at >= datetime('now', ?)
