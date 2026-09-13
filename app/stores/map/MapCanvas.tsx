@@ -7,11 +7,25 @@ import Script from "next/script";
 import Link from "next/link";
 import { CustomOverlayMap, Map, MapMarker } from "react-kakao-maps-sdk";
 import type { Store } from "@/lib/types";
-import { averageCenter } from "@/lib/mapView";
+import { averageCenter, storeHref } from "@/lib/mapView";
 
 const FALLBACK_CENTER = { lat: 37.5665, lng: 126.978 }; // 서울시청 (매장 전부 좌표 없을 때만)
 
-export default function MapCanvas({ stores }: { stores: Store[] }) {
+export default function MapCanvas({
+  stores,
+  fromStoreId = null,
+  table = null,
+}: {
+  stores: Store[];
+  /** 이 지도로 들어오기 직전에 있던 매장 id */
+  fromStoreId?: string | null;
+  /** 그 매장에서 앉아 있던 테이블 번호 */
+  table?: string | null;
+}) {
+  /** 원래 앉아 있던 매장으로 돌아갈 때만 테이블 번호를 복원한다 (lib/mapView.ts) */
+  const hrefFor = (storeId: number) => storeHref(storeId, fromStoreId, table);
+  const isMyTable = (storeId: number) => hrefFor(storeId).includes("?table=");
+
   const appkey = process.env.NEXT_PUBLIC_KAKAO_MAP_KEY ?? "";
   const [sdkReady, setSdkReady] = useState(false);
   const [sdkError, setSdkError] = useState(false);
@@ -91,8 +105,10 @@ export default function MapCanvas({ stores }: { stores: Store[] }) {
             >
               <div className="map-overlay">
                 <strong>{selected.name}</strong>
-                <Link href={`/stores/${selected.id}`}>
-                  메뉴 보기 (열람 전용)
+                <Link href={hrefFor(selected.id)}>
+                  {isMyTable(selected.id)
+                    ? `메뉴판으로 돌아가기 (테이블 ${table})`
+                    : "메뉴 보기 (열람 전용)"}
                 </Link>
               </div>
             </CustomOverlayMap>
