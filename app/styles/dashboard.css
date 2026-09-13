@@ -1,16 +1,52 @@
-/* ── 대시보드 (PC 폭) ── */
+/* ── 대시보드 ──
+   손님 화면(.app, 460px)과 달리 화면 폭을 그대로 쓴다. 폭만 늘리면 차트가
+   가로로 늘어나기만 해서, 넓어질수록 카드를 여러 열로 배치해(.dash-grid)
+   공간을 실제로 채운다. */
 .dash {
-  max-width: 900px;
+  width: 100%;
   margin: 0 auto;
   min-height: 100vh;
   background: var(--bg);
   padding-bottom: 60px;
 }
+/* 초광폭 모니터에서 한 줄이 끝없이 길어지는 것만 막는다 */
+@media (min-width: 1800px) {
+  .dash {
+    max-width: 1760px;
+  }
+}
+
+/* 카드 수를 폭에 맞춰 자동으로 늘린다 (모바일 1~2개 → 데스크톱 3개 이상) */
 .kpi-grid {
   display: grid;
-  grid-template-columns: repeat(3, 1fr);
+  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
   gap: 10px;
   padding: 0 16px;
+}
+
+/* 차트/표 카드 배치 — 모바일 1열, 900px↑ 2열, 1400px↑ 3열 */
+.dash-grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 12px;
+  padding: 12px 16px;
+}
+@media (min-width: 900px) {
+  .dash-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+@media (min-width: 1400px) {
+  .dash-grid {
+    grid-template-columns: repeat(3, 1fr);
+  }
+}
+.dash-grid .chart-box {
+  margin: 0;
+}
+/* 표처럼 가로로 넓어야 하는 카드는 한 줄 전체를 쓴다 */
+.chart-box.wide {
+  grid-column: 1 / -1;
 }
 .kpi {
   background: var(--surface);
@@ -88,7 +124,8 @@
 /* ── QR 코드 생성 ── */
 .qr-grid {
   display: grid;
-  grid-template-columns: repeat(2, 1fr);
+  /* 모바일 2개 → 넓어지면 자동으로 더 많이 */
+  grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
   gap: 10px;
   padding: 0 16px 16px;
 }
