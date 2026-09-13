@@ -154,6 +154,17 @@ export interface OrderSummaryRow {
   created_at: string;
 }
 
+/** 오늘의 룰렛 스핀 기록 — 무료 증정 항목이 진짜 당첨분인지 서버가 대조하는 근거 */
+export interface RouletteSpin {
+  id: number;
+  /** 'miss' | 'menu' | 'drink' | 'discount10' (lib/recommend.ts 의 RoulettePrizeKind) */
+  prize_kind: string | null;
+  /** prize_kind 가 'menu' 일 때 당첨된 메뉴 */
+  prize_menu_id: number | null;
+  /** 이미 무료 증정으로 주문에 사용했으면 그 시각 — 하루에 두 번 못 쓰게 하는 표시 */
+  redeemed_at: string | null;
+}
+
 /** 장바구니에 담기는 최소 정보 (localStorage 저장용) */
 export interface CartLine {
   menuId: number;

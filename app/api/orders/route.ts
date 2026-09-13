@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { auth } from "@/auth";
-import { createOrder } from "@/lib/db";
+import { createOrder, getTodaySpin, redeemSpin } from "@/lib/db";
 
 export const runtime = "nodejs";
 
@@ -50,6 +50,28 @@ export async function POST(req: NextRequest) {
     session?.user?.id ??
     (Number.isFinite(bodyUserId as number) ? (bodyUserId as number) : null);
 
+  // 0원 처리되는 free 항목은 클라이언트 말만 믿으면 안 된다 — 오늘 이 매장에서
+  // 실제로 "추천 메뉴 무료 증정"에 당첨된 기록(roulette_spins)과 대조한다.
+  const freeItems = normalizedItems.filter((it) => it.free);
+  let spinToRedeem: number | null = null;
+  if (freeItems.length > 0) {
+    const spin = userId ? await getTodaySpin(userId, storeId) : null;
+    const eligible =
+      spin != null &&
+      spin.prize_kind === "menu" &&
+      spin.redeemed_at == null &&
+      freeItems.length === 1 &&
+      freeItems[0].menuId === spin.prize_menu_id &&
+      freeItems[0].quantity === 1;
+    if (!eligible) {
+      return NextResponse.json(
+        { error: "무료 증정 대상이 아닙니다 (룰렛 당첨 기록 없음)" },
+        { status: 403 },
+      );
+    }
+    spinToRedeem = spin.id;
+  }
+
   try {
     const order = await createOrder({
       storeId,
@@ -57,6 +79,8 @@ export async function POST(req: NextRequest) {
       tableNumber: body.tableNumber == null ? null : String(body.tableNumber),
       items: normalizedItems,
     });
+    // 주문이 실제로 만들어진 뒤에 당첨을 소진 처리 (같은 당첨 재사용 방지)
+    if (spinToRedeem != null) await redeemSpin(spinToRedeem);
     return NextResponse.json({ order }, { status: 201 });
   } catch (err) {
     console.error("POST /api/orders failed", err);

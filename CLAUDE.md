@@ -129,7 +129,7 @@ npm run dev
 고객 메뉴판 (개인화):   http://localhost:3000/stores/1?table=A1&userId=1
 내 맛집 지도 (로그인 필요): http://localhost:3000/stores/map
 점주 로그인 → 대시보드:  http://localhost:3000/dashboard
-점주 대시보드 (데모):    http://localhost:3000/dashboard/1
+점주 대시보드:           http://localhost:3000/dashboard  (로그인 → 매장 등록 후 소유자만 접근)
 
 DB 초기화: npm run db:reset
 

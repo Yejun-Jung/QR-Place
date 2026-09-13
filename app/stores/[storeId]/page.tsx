@@ -324,7 +324,6 @@ function MenuBoard() {
       {rouletteOpen && (
         <RouletteModal
           storeId={storeId}
-          menus={data.menus}
           onClose={() => setRouletteOpen(false)}
           onAdd={(m) =>
             // ponytail: cart.add()가 같은 menuId를 이미 담긴 줄에 병합하면서

@@ -32,8 +32,13 @@ console.log(
   visited.map((s) => s.name),
 );
 
-console.log("룰렛 오늘 돌렸는지(가입 전):", await sqliteAdapter.hasSpunToday(1, 1));
-await sqliteAdapter.recordSpin(1, 1);
+console.log("룰렛 오늘 돌렸는지(기록 전):", await sqliteAdapter.hasSpunToday(1, 1));
+await sqliteAdapter.recordSpin(1, 1, { kind: "menu", menuId: menus[0].id });
 console.log("룰렛 오늘 돌렸는지(기록 후):", await sqliteAdapter.hasSpunToday(1, 1));
+
+const spin = await sqliteAdapter.getTodaySpin(1, 1);
+console.log("오늘 당첨 기록:", spin);
+await sqliteAdapter.redeemSpin(spin.id);
+console.log("사용 처리 후 redeemed_at:", (await sqliteAdapter.getTodaySpin(1, 1))?.redeemed_at);
 
 console.log("\n✅ SQLite 어댑터 정상");

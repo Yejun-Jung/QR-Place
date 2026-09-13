@@ -24,7 +24,11 @@ npm run dev
 
 - 고객 메뉴판(비로그인·인기순): <http://localhost:3000/stores/1?table=A1>
 - 개인화(유저 1 · 매운맛 취향): <http://localhost:3000/stores/1?table=A1&userId=1>
-- 점주 대시보드: <http://localhost:3000/dashboard/1>
+- 점주 대시보드: <http://localhost:3000/dashboard> (카카오 로그인 → 내 매장 등록 → 내 대시보드)
+
+> 점주용 API(매출 통계·주문 목록·메뉴 CRUD)는 **그 매장의 소유자만** 접근할 수 있다.
+> 그래서 시드에 들어있는 매장(`/dashboard/1`)은 주인이 없어 열리지 않는다 —
+> `/dashboard` 로 들어가 매장을 등록하면 그 계정이 소유자가 되고 대시보드가 열린다.
 
 ### 고객 주문 흐름
 
