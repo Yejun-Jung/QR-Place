@@ -125,10 +125,9 @@ export default function DashboardPage() {
   const storeName = useStoreName(storeId);
 
   // 새 주문 알림 — 기본 켜짐, 켜고 끈 설정은 이 기기에 기억한다.
-  // 브라우저는 페이지를 한 번 누르기 전엔 소리를 막으므로, 첫 클릭/키 입력 때
-  // AudioContext 를 깨운다(unlocked). 그 전엔 버튼 옆에 안내를 띄운다.
+  // 대시보드를 열자마자 소리를 준비한다. 브라우저가 이 사이트의 자동 재생을 허용하면
+  // 클릭 없이 바로 울리고, 막혀 있으면 새 주문 때마다 다시 시도하며 화면을 한 번 누르면 풀린다.
   const [soundOn, setSoundOn] = useState(true);
-  const [unlocked, setUnlocked] = useState(false);
   const audioRef = useRef<AudioContext | null>(null);
   /** 이미 본 결제완료 주문 id — 여기 없는 결제완료 주문이 새 주문이다 */
   const seenPaid = useRef<Set<number> | null>(null);
@@ -140,10 +139,9 @@ export default function DashboardPage() {
     } catch {
       // 저장소를 못 쓰는 환경이면 기본값(켜짐) 그대로
     }
-    const unlock = () => {
-      audioRef.current ??= new AudioContext();
-      void audioRef.current.resume().then(() => setUnlocked(true));
-    };
+    audioRef.current ??= new AudioContext();
+    const unlock = () => void audioRef.current?.resume().catch(() => {});
+    unlock();
     window.addEventListener("pointerdown", unlock);
     window.addEventListener("keydown", unlock);
     return () => {
@@ -172,11 +170,17 @@ export default function DashboardPage() {
     }
     const fresh = paidIds.filter((id) => !seenPaid.current!.has(id));
     fresh.forEach((id) => seenPaid.current!.add(id));
-    if (fresh.length > 0 && soundOn && unlocked && audioRef.current) {
-      playDing(audioRef.current);
+    const ctx = audioRef.current;
+    if (fresh.length > 0 && soundOn && ctx) {
+      // 아직 막혀 있으면 한 번 더 풀어 보고, 실제로 재생 가능할 때만 울린다
+      // (막힌 채로 예약하면 나중에 클릭하는 순간 뒤늦게 울린다)
+      ctx
+        .resume()
+        .then(() => ctx.state === "running" && playDing(ctx))
+        .catch(() => {});
       announce(fresh.length);
     }
-  }, [orders, range, soundOn, unlocked]);
+  }, [orders, range, soundOn]);
 
   // 탭 제목에 처리 대기 주문 수 — 다른 탭을 보고 있어도 알 수 있게
   const waitingCount = orders.filter((o) => o.status === "paid").length;
@@ -368,11 +372,6 @@ export default function DashboardPage() {
         >
           {soundOn ? "🔔 주문 알림 켜짐" : "🔕 주문 알림 꺼짐"}
         </button>
-        {soundOn && !unlocked && (
-          <span className="muted" style={{ alignSelf: "center", fontSize: "0.8rem" }}>
-            화면을 한 번 클릭하면 소리가 나요
-          </span>
-        )}
       </div>
 
       <div
