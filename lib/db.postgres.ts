@@ -139,7 +139,7 @@ export const postgresAdapter: DbAdapter = {
       SELECT m.id, m.store_id, m.name, m.price, m.description, m.tags, m.image_url
       FROM order_items oi1
       JOIN order_items oi2 ON oi2.order_id = oi1.order_id AND oi2.menu_id <> oi1.menu_id
-      JOIN orders o ON o.id = oi1.order_id AND o.status = 'paid'
+      JOIN orders o ON o.id = oi1.order_id AND o.status IN ('paid','served')
       JOIN menus m ON m.id = oi2.menu_id
       WHERE oi1.menu_id = ${menuId} AND oi2.price > 0
       GROUP BY m.id
@@ -395,7 +395,7 @@ export const postgresAdapter: DbAdapter = {
              COUNT(*)::int AS orders,
              COALESCE(SUM(total_amount), 0)::int AS revenue
       FROM orders
-      WHERE store_id = ${storeId} AND status = 'paid'
+      WHERE store_id = ${storeId} AND status IN ('paid','served')
         AND created_at >= NOW() - ${days} * INTERVAL '1 day'
       GROUP BY 1
       ORDER BY 1

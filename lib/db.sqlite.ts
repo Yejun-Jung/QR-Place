@@ -368,7 +368,7 @@ export const sqliteAdapter: DbAdapter = {
               SUM(oi2.quantity) AS cnt
        FROM order_items oi1
        JOIN order_items oi2 ON oi2.order_id = oi1.order_id AND oi2.menu_id != oi1.menu_id
-       JOIN orders o ON o.id = oi1.order_id AND o.status = 'paid'
+       JOIN orders o ON o.id = oi1.order_id AND o.status IN ('paid','served')
        JOIN menus m ON m.id = oi2.menu_id
        WHERE oi1.menu_id = ? AND oi2.price > 0
        GROUP BY m.id
@@ -761,7 +761,7 @@ export const sqliteAdapter: DbAdapter = {
               COUNT(*) AS orders,
               COALESCE(SUM(total_amount), 0) AS revenue
        FROM orders
-       WHERE store_id = ? AND status = 'paid'
+       WHERE store_id = ? AND status IN ('paid','served')
          AND created_at >= datetime('now', ?)
        GROUP BY date(created_at)
        ORDER BY 1`,
