@@ -60,6 +60,9 @@ ALTER TABLE orders DROP CONSTRAINT IF EXISTS orders_status_check;
 ALTER TABLE orders ADD CONSTRAINT orders_status_check
   CHECK (status IN ('pending','paid','served','rejected','cancelled'));
 
+-- 게스트 주문 기록용: 주문을 넣은 휴대폰(브라우저) 쿠키 식별값
+ALTER TABLE orders ADD COLUMN IF NOT EXISTS guest_token VARCHAR;
+
 -- 주문 항목 (주문 시점 이름/가격 스냅샷)
 CREATE TABLE IF NOT EXISTS order_items (
   id       SERIAL PRIMARY KEY,
@@ -92,5 +95,6 @@ CREATE INDEX IF NOT EXISTS idx_view_logs_store ON view_logs (store_id, created_a
 CREATE INDEX IF NOT EXISTS idx_view_logs_menu  ON view_logs (menu_id, action_type);
 CREATE INDEX IF NOT EXISTS idx_menus_store     ON menus (store_id);
 CREATE INDEX IF NOT EXISTS idx_orders_store    ON orders (store_id, created_at DESC);
+CREATE INDEX IF NOT EXISTS idx_orders_guest    ON orders (guest_token);
 CREATE INDEX IF NOT EXISTS idx_order_items_ord ON order_items (order_id);
 CREATE INDEX IF NOT EXISTS idx_roulette_spins  ON roulette_spins (user_id, store_id, spun_at DESC);

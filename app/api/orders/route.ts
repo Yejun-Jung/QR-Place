@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { resolveUserId } from "@/lib/authz";
+import { GUEST_COOKIE, resolveUserId } from "@/lib/authz";
 import { createOrder, getTodaySpin, redeemSpin } from "@/lib/db";
 
 export const runtime = "nodejs";
@@ -67,16 +67,30 @@ export async function POST(req: NextRequest) {
     spinToRedeem = spin.id;
   }
 
+  // 이 휴대폰의 식별 쿠키. 없으면 첫 주문 때 발급한다 — "내 주문 기록"은
+  // 테이블이 아니라 이 값(+로그인 유저)으로 찾는다.
+  const guestToken =
+    req.cookies.get(GUEST_COOKIE)?.value ?? crypto.randomUUID();
+
   try {
     const order = await createOrder({
       storeId,
       userId,
       tableNumber: body.tableNumber == null ? null : String(body.tableNumber),
+      guestToken,
       items: normalizedItems,
     });
     // 주문이 실제로 만들어진 뒤에 당첨을 소진 처리 (같은 당첨 재사용 방지)
     if (spinToRedeem != null) await redeemSpin(spinToRedeem);
-    return NextResponse.json({ order }, { status: 201 });
+    const res = NextResponse.json({ order }, { status: 201 });
+    res.cookies.set(GUEST_COOKIE, guestToken, {
+      httpOnly: true,
+      sameSite: "lax",
+      secure: process.env.NODE_ENV === "production",
+      path: "/",
+      maxAge: 60 * 60 * 24 * 365,
+    });
+    return res;
   } catch (err) {
     console.error("POST /api/orders failed", err);
     return NextResponse.json(

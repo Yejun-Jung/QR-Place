@@ -62,7 +62,10 @@ export async function resolveUserId(claimed: unknown): Promise<number | null> {
   return Number.isFinite(id) ? id : null;
 }
 
-const normalizeTable =(v: string | null | undefined) =>
+/** 게스트 주문 기록용 휴대폰 식별 쿠키 이름 */
+export const GUEST_COOKIE = "qp_guest";
+
+const normalizeTable = (v: string | null | undefined) =>
   v == null || v === "" ? null : v;
 
 /**

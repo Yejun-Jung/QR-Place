@@ -277,8 +277,8 @@ export const postgresAdapter: DbAdapter = {
     const total = lines.reduce((s, l) => s + l.price * l.quantity, 0);
 
     const { rows: orderRows } = await sql<{ id: number }>`
-      INSERT INTO orders (store_id, user_id, table_number, status, total_amount)
-      VALUES (${input.storeId}, ${input.userId}, ${input.tableNumber}, 'pending', ${total})
+      INSERT INTO orders (store_id, user_id, table_number, guest_token, status, total_amount)
+      VALUES (${input.storeId}, ${input.userId}, ${input.tableNumber}, ${input.guestToken}, 'pending', ${total})
       RETURNING id
     `;
     const orderId = Number(orderRows[0].id);
@@ -347,13 +347,14 @@ export const postgresAdapter: DbAdapter = {
 
   async listCustomerOrders(
     storeId,
-    tableNumber,
+    guestToken,
     userId,
     days,
     limit = 20,
   ): Promise<CustomerOrderRow[]> {
-    // 테이블 번호를 아는 사람(= 그 테이블 손님) 기준 + 로그인했다면 본인 주문도
-    if (tableNumber == null && userId == null) return [];
+    // 이 휴대폰에서 넣은 주문 + 로그인했다면 본인 주문. 테이블 기준으로 보여주면
+    // 같은 테이블의 일행·다음 손님 주문까지 보여서 쓰지 않는다.
+    if (guestToken == null && userId == null) return [];
     const { rows } = await sql<CustomerOrderRow>`
       SELECT o.id, o.table_number, o.status, o.payment_method, o.total_amount,
              o.created_at,
@@ -364,7 +365,7 @@ export const postgresAdapter: DbAdapter = {
       WHERE o.store_id = ${storeId}
         AND o.created_at >= NOW() - ${days} * INTERVAL '1 day'
         AND (
-          (${tableNumber}::text IS NOT NULL AND o.table_number = ${tableNumber})
+          (${guestToken}::text IS NOT NULL AND o.guest_token = ${guestToken})
           OR (${userId}::int IS NOT NULL AND o.user_id = ${userId})
         )
       ORDER BY o.created_at DESC

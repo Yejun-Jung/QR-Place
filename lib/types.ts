@@ -155,6 +155,8 @@ export interface NewOrderInput {
   storeId: number;
   userId: number | null;
   tableNumber: string | null;
+  /** 이 주문을 넣은 휴대폰(브라우저) 식별값 — 게스트 주문 기록 조회용 */
+  guestToken: string | null;
   /** free: 룰렛 무료증정 당첨 항목 — 서버가 가격을 0원으로 스냅샷 */
   items: { menuId: number; quantity: number; free?: boolean }[];
 }

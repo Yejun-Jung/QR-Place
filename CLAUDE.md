@@ -55,7 +55,7 @@ QR-Place는 유저의 과거 주문/방문 통계를 분석해 취향에 맞는 
 - menus: id, store_id, name, price, description, tags(JSONB)
   - tags 예시: {"category": "찌개", "spicy": 3, "price_range": "mid"}
 - view_logs: id, user_id(NULL=비로그인), table_number, store_id, menu_id, action_type(view|order), created_at
-- orders: id, store_id, user_id, table_number, status(pending|paid|cancelled), payment_method, total_amount, created_at, paid_at
+- orders: id, store_id, user_id, table_number, guest_token(주문한 휴대폰 쿠키), status(pending|paid|served|rejected|cancelled), payment_method, total_amount, created_at, paid_at
 - order_items: id, order_id, menu_id, name, price, quantity
   - 이름·가격은 **주문 시점 스냅샷** (클라이언트 위조 방지: 서버가 DB 기준으로 다시 계산)
 - roulette_spins: id, user_id, store_id, prize_kind, prize_menu_id, redeemed_at, spun_at
@@ -85,7 +85,8 @@ QR-Place는 유저의 과거 주문/방문 통계를 분석해 취향에 맞는 
 ## 로그인 전략
 
 - 비로그인 주문: 로그인 없이 메뉴 조회·주문 100% 가능 (입구 장벽 제로)
-  - view_logs/orders에 user_id=NULL로 저장하고, 대신 **테이블 번호**로 묶는다.
+  - view_logs/orders에 user_id=NULL로 저장한다. "내 주문 기록"은 첫 주문 때 발급하는
+    `qp_guest` 쿠키(orders.guest_token)로 휴대폰별로 묶는다 — 같은 테이블의 다른 손님 주문은 안 보인다.
   - 단, 익명 세션 ID는 구현하지 않았다 → 비로그인 손님은 재방문해도 개인화가 붙지 않고
     인기순(콜드 스타트)으로 나온다. 개인화를 받으려면 카카오 로그인이 필요하다.
 - 카카오 로그인 유도 시점: "내 지도에 저장", "룰렛 이벤트" 혜택 버튼 클릭 시

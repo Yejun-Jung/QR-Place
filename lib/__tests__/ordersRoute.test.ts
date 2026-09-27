@@ -21,9 +21,9 @@ vi.mock("@/lib/db", () => ({
 
 const { POST } = await import("@/app/api/orders/route");
 
-/** 핸들러는 req.json() 만 쓰므로 그 부분만 흉내낸다 */
+/** 핸들러는 req.json() 과 req.cookies 만 쓰므로 그 부분만 흉내낸다 */
 const req = (body: unknown) =>
-  ({ json: async () => body }) as unknown as NextRequest;
+  ({ json: async () => body, cookies: new Map() }) as unknown as NextRequest;
 
 const FREE_MENU_ID = 5;
 const order = (body: Record<string, unknown> = {}) => ({

@@ -69,6 +69,7 @@ CREATE TABLE IF NOT EXISTS orders (
   store_id       INTEGER NOT NULL REFERENCES stores(id) ON DELETE CASCADE,
   user_id        INTEGER REFERENCES users(id) ON DELETE SET NULL,
   table_number   TEXT,
+  guest_token    TEXT,
   status         TEXT NOT NULL DEFAULT 'pending' CHECK (status IN ('pending','paid','served','rejected','cancelled')),
   payment_method TEXT CHECK (payment_method IN ('card','kakaopay','counter')),
   total_amount   INTEGER NOT NULL DEFAULT 0,
@@ -165,6 +166,13 @@ function db(): DatabaseSync {
   }[];
   if (!menuCols.some((c) => c.name === "image_url")) {
     d.exec("ALTER TABLE menus ADD COLUMN image_url TEXT");
+  }
+  // 게스트 주문 기록용 휴대폰 식별값 (기존 데모 DB 파일에도 붙여준다)
+  const orderCols = d.prepare("PRAGMA table_info(orders)").all() as {
+    name: string;
+  }[];
+  if (!orderCols.some((c) => c.name === "guest_token")) {
+    d.exec("ALTER TABLE orders ADD COLUMN guest_token TEXT");
   }
   // 룰렛 당첨 상품 컬럼 (기존 데모 DB 파일에도 붙여준다)
   const spinCols = d.prepare("PRAGMA table_info(roulette_spins)").all() as {
@@ -578,11 +586,12 @@ export const sqliteAdapter: DbAdapter = {
     d.exec("BEGIN");
     try {
       const order = queryOne<{ id: number }>(
-        `INSERT INTO orders (store_id, user_id, table_number, status, total_amount)
-         VALUES (?, ?, ?, 'pending', ?) RETURNING id`,
+        `INSERT INTO orders (store_id, user_id, table_number, guest_token, status, total_amount)
+         VALUES (?, ?, ?, ?, 'pending', ?) RETURNING id`,
         input.storeId,
         input.userId,
         input.tableNumber,
+        input.guestToken,
         total,
       );
       const insItem = d.prepare(
@@ -694,14 +703,14 @@ export const sqliteAdapter: DbAdapter = {
 
   async listCustomerOrders(
     storeId,
-    tableNumber,
+    guestToken,
     userId,
     days,
     limit = 20,
   ): Promise<CustomerOrderRow[]> {
-    // 테이블 번호를 아는 사람(= 그 테이블 손님) 기준으로 보여주고,
-    // 로그인했다면 본인 주문도 합친다. 둘 다 없으면 보여줄 게 없다.
-    if (tableNumber == null && userId == null) return [];
+    // 이 휴대폰에서 넣은 주문 + 로그인했다면 본인 주문. 테이블 기준으로 보여주면
+    // 같은 테이블의 일행·다음 손님 주문까지 보여서 쓰지 않는다.
+    if (guestToken == null && userId == null) return [];
     const rows = query<CustomerOrderRow>(
       `SELECT o.id, o.table_number, o.status, o.payment_method, o.total_amount,
               o.created_at,
@@ -712,15 +721,15 @@ export const sqliteAdapter: DbAdapter = {
        WHERE o.store_id = ?
          AND o.created_at >= datetime('now', ?)
          AND (
-           (? IS NOT NULL AND o.table_number = ?)
+           (? IS NOT NULL AND o.guest_token = ?)
            OR (? IS NOT NULL AND o.user_id = ?)
          )
        ORDER BY o.created_at DESC
        LIMIT ?`,
       storeId,
       since(days),
-      tableNumber,
-      tableNumber,
+      guestToken,
+      guestToken,
       userId,
       userId,
       limit,

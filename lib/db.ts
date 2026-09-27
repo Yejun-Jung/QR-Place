@@ -87,10 +87,10 @@ export interface DbAdapter {
     days: number,
     limit?: number,
   ): Promise<CustomerOrderRow[]>;
-  /** 손님이 보는 "내 주문 기록" — 같은 테이블의 주문 + (로그인 시) 본인 주문 */
+  /** 손님이 보는 "내 주문 기록" — 이 휴대폰에서 넣은 주문 + (로그인 시) 본인 주문 */
   listCustomerOrders(
     storeId: number,
-    tableNumber: string | null,
+    guestToken: string | null,
     userId: number | null,
     days: number,
     limit?: number,
@@ -223,14 +223,14 @@ export async function listOrders(storeId: number, days: number, limit = 50) {
 }
 export async function listCustomerOrders(
   storeId: number,
-  tableNumber: string | null,
+  guestToken: string | null,
   userId: number | null,
   days: number,
   limit = 20,
 ) {
   return (await getAdapter()).listCustomerOrders(
     storeId,
-    tableNumber,
+    guestToken,
     userId,
     days,
     limit,
