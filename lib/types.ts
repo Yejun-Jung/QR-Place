@@ -155,9 +155,14 @@ export interface Order {
   items: OrderItem[];
 }
 
-/** 화면에 보이는 주문번호: 오늘 번호가 있으면 "3번", 없으면(결제 전·예전 주문) 내부 id */
-export function orderNoLabel(o: { id: number; daily_no: number | null }): string {
-  return o.daily_no != null ? `${o.daily_no}번` : `#${o.id}`;
+/**
+ * 화면에 보이는 주문번호: 오늘 번호가 있으면 "3번".
+ * 결제 전 주문은 번호가 아직 없다 — 내부 id 를 보여주면 결제 취소 후 다시 주문할 때
+ * 47 → 48 처럼 번호가 올라가 보여서 "(결제 전)"으로 둔다. 기능 도입 전 예전 주문만 내부 id.
+ */
+export function orderNoLabel(o: { id: number; daily_no: number | null; status: string }): string {
+  if (o.daily_no != null) return `${o.daily_no}번`;
+  return o.status === "pending" ? "(결제 전)" : `#${o.id}`;
 }
 
 export interface NewOrderInput {
