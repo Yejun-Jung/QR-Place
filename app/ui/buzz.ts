@@ -3,5 +3,5 @@
  * 안드로이드 브라우저만 지원 — 아이폰(iOS)은 웹 진동을 막아둬서 조용히 아무 일도 안 한다.
  */
 export function buzz() {
-  navigator.vibrate?.([200, 100, 200]);
+  navigator.vibrate?.(700); // 0.7초 한 번
 }
