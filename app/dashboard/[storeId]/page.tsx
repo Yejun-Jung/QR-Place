@@ -39,30 +39,55 @@ ChartJS.register(
 
 const CHART_OPTS = { responsive: true, maintainAspectRatio: false } as const;
 
-/** 벨 소리 한 음 — 기본음에 배음 두 개를 얹고 빠르게 울렸다가 서서히 사라진다 */
-function bell(ctx: AudioContext, freq: number, t: number, dur: number) {
-  for (const [mult, level] of [[1, 0.3], [2, 0.1], [3, 0.036]]) {
+/**
+ * 종을 한 번 친 소리: 배음마다 [배수, 세기, 초당 감쇠 dB] 로 순간적으로 울리고
+ * 각자의 속도로 사라진다. 두 옥타브 위(×4) 배음이 기본음보다 커서 쨍한 종소리가 난다.
+ */
+function strike(
+  ctx: AudioContext,
+  out: AudioNode,
+  freq: number,
+  t: number,
+  partials: [number, number, number][],
+) {
+  for (const [mult, level, dbPerSec] of partials) {
     const osc = ctx.createOscillator();
     const gain = ctx.createGain();
     osc.frequency.value = freq * mult;
-    gain.gain.setValueAtTime(0.0001, t);
-    gain.gain.exponentialRampToValueAtTime(level, t + 0.01);
-    gain.gain.exponentialRampToValueAtTime(0.0001, t + dur);
-    osc.connect(gain).connect(ctx.destination);
+    gain.gain.setValueAtTime(0, t);
+    gain.gain.linearRampToValueAtTime(level, t + 0.004);
+    gain.gain.setTargetAtTime(0, t + 0.004, 8.686 / dbPerSec); // dB/초 → 시간상수
+    osc.connect(gain).connect(out);
     osc.start(t);
-    osc.stop(t + dur);
+    osc.stop(t + 1.2);
   }
 }
 
-/** 새 주문 알림음: 도-미-솔-(높은)도 벨 차임 두 번. 소리 파일 없이 Web Audio 로 만든다 */
+/**
+ * 새 주문 알림음 "띵동": 미 → 0.3초 뒤 도. 두 음이 겹쳐 울리다가 0.95초에 함께 딱 끊긴다.
+ * 소리 파일 없이 Web Audio 로 합성한다 (배음 세기·감쇠는 매장 알림음 녹음을 분석해 맞춤).
+ */
 function playDing(ctx: AudioContext) {
-  const start = ctx.currentTime + 0.05;
-  const notes = [523, 659, 784, 1047]; // C5 E5 G5 C6
-  for (let r = 0; r < 2; r++) {
-    notes.forEach((freq, i) => {
-      bell(ctx, freq, start + r * 1.6 + i * 0.22, i === notes.length - 1 ? 1.2 : 0.9);
-    });
-  }
+  const t = ctx.currentTime + 0.05;
+  const master = ctx.createGain();
+  master.connect(ctx.destination);
+  master.gain.setValueAtTime(0.28, t);
+  master.gain.setValueAtTime(0.28, t + 0.95);
+  master.gain.linearRampToValueAtTime(0, t + 1.05);
+  strike(ctx, master, 659, t, [[1, 0.5, 25], [4, 0.71, 39], [16, 0.012, 45]]); // E5 띵
+  strike(ctx, master, 523, t + 0.3, [[1, 0.63, 25], [4, 1, 33], [16, 0.056, 50]]); // C5 동
+}
+
+/** 띵동이 끝난 뒤 안내 멘트. 여러 건이 한꺼번에 들어오면 한 번에 묶어 말한다. */
+function announce(count: number) {
+  if (!("speechSynthesis" in window)) return;
+  const u = new SpeechSynthesisUtterance(
+    count > 1 ? `새 주문 ${count}건이 들어왔습니다` : "새 주문이 들어왔습니다",
+  );
+  u.lang = "ko-KR";
+  u.rate = 1.05;
+  speechSynthesis.cancel();
+  setTimeout(() => speechSynthesis.speak(u), 1100);
 }
 // 값 축은 0부터, 눈금은 정수만 (건수·명·원에 0.5 같은 눈금은 의미가 없다)
 const COUNT_AXIS = { beginAtZero: true, ticks: { precision: 0 } } as const;
@@ -147,6 +172,7 @@ export default function DashboardPage() {
     fresh.forEach((id) => seenPaid.current!.add(id));
     if (fresh.length > 0 && soundOn && unlocked && audioRef.current) {
       playDing(audioRef.current);
+      announce(fresh.length);
     }
   }, [orders, range, soundOn, unlocked]);
 
