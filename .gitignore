@@ -21,3 +21,6 @@ yarn-error.log*
 
 .vercel
 .env*
+
+# Claude 데스크톱 앱 미리보기 설정 (개발 도구)
+.claude/
