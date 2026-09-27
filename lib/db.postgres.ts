@@ -126,7 +126,7 @@ export const postgresAdapter: DbAdapter = {
 
   async getStoreMenus(storeId) {
     const { rows } = await sql<Menu>`
-      SELECT id, store_id, name, price, description, tags, image_url
+      SELECT id, store_id, name, price, description, tags, image_url, sold_out
       FROM menus
       WHERE store_id = ${storeId}
       ORDER BY id
@@ -136,12 +136,12 @@ export const postgresAdapter: DbAdapter = {
 
   async getPairedMenus(menuId, limit = 3) {
     const { rows } = await sql<Menu>`
-      SELECT m.id, m.store_id, m.name, m.price, m.description, m.tags, m.image_url
+      SELECT m.id, m.store_id, m.name, m.price, m.description, m.tags, m.image_url, m.sold_out
       FROM order_items oi1
       JOIN order_items oi2 ON oi2.order_id = oi1.order_id AND oi2.menu_id <> oi1.menu_id
       JOIN orders o ON o.id = oi1.order_id AND o.status IN ('paid','served')
       JOIN menus m ON m.id = oi2.menu_id
-      WHERE oi1.menu_id = ${menuId} AND oi2.price > 0
+      WHERE oi1.menu_id = ${menuId} AND oi2.price > 0 AND NOT m.sold_out
       GROUP BY m.id
       ORDER BY SUM(oi2.quantity) DESC
       LIMIT ${limit}
@@ -225,7 +225,7 @@ export const postgresAdapter: DbAdapter = {
     const { rows } = await sql<Menu>`
       INSERT INTO menus (store_id, name, price, description, tags, image_url)
       VALUES (${storeId}, ${input.name}, ${input.price}, ${input.description}, ${JSON.stringify(input.tags ?? {})}::jsonb, ${input.imageUrl})
-      RETURNING id, store_id, name, price, description, tags, image_url
+      RETURNING id, store_id, name, price, description, tags, image_url, sold_out
     `;
     return rows[0];
   },
@@ -237,13 +237,17 @@ export const postgresAdapter: DbAdapter = {
           description = ${input.description}, tags = ${JSON.stringify(input.tags ?? {})}::jsonb,
           image_url = ${input.imageUrl}
       WHERE id = ${menuId}
-      RETURNING id, store_id, name, price, description, tags, image_url
+      RETURNING id, store_id, name, price, description, tags, image_url, sold_out
     `;
     return rows[0] ?? null;
   },
 
   async deleteMenu(menuId) {
     await sql`DELETE FROM menus WHERE id = ${menuId}`;
+  },
+
+  async setMenuSoldOut(menuId, soldOut) {
+    await sql`UPDATE menus SET sold_out = ${soldOut} WHERE id = ${menuId}`;
   },
 
   /* ---------------- 주문 / 결제 ---------------- */
@@ -253,10 +257,18 @@ export const postgresAdapter: DbAdapter = {
       id: number;
       name: string;
       price: number;
+      sold_out: boolean;
     }>`
-      SELECT id, name, price FROM menus WHERE store_id = ${input.storeId}
+      SELECT id, name, price, sold_out FROM menus WHERE store_id = ${input.storeId}
     `;
     const menuMap = new Map(menuRows.map((m) => [Number(m.id), m]));
+    // 장바구니에 담아둔 사이 품절된 메뉴는 주문을 막는다
+    const soldOut = input.items
+      .map((it) => menuMap.get(Number(it.menuId)))
+      .filter((m) => m?.sold_out);
+    if (soldOut.length > 0) {
+      throw new Error(`품절된 메뉴가 있습니다: ${soldOut.map((m) => m?.name).join(", ")}`);
+    }
 
     const lines = input.items
       .map((it) => {

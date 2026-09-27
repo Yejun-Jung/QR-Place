@@ -333,8 +333,8 @@ function MenuBoard() {
               return (
                 <div
                   key={m.id}
-                  className={`menu-row${recommended ? " rec" : ""}`}
-                  onClick={() => openSheet(m)}
+                  className={`menu-row${recommended ? " rec" : ""}${m.sold_out ? " sold-out" : ""}`}
+                  onClick={() => !m.sold_out && openSheet(m)}
                 >
                   {m.image_url && (
                     // eslint-disable-next-line @next/next/no-img-element
@@ -344,6 +344,7 @@ function MenuBoard() {
                     {recommended && <span className="badge">추천</span>}
                     <div className="name">
                       {m.name}
+                      {m.sold_out && <span className="sold-badge">품절</span>}
                       {inCartQty > 0 && (
                         <span className="in-cart">담음 {inCartQty}</span>
                       )}

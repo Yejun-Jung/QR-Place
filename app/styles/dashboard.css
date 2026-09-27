@@ -92,7 +92,7 @@
   margin: 0 0 12px;
 }
 .seg {
-  display: inline-flex;
+  display: flex; /* 기간 버튼은 왼쪽, 주문 알림 버튼은 margin-left:auto 로 오른쪽 끝 */
   gap: 6px;
   margin: 12px 16px 0;
 }

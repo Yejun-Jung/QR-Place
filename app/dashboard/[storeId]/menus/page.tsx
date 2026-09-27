@@ -156,6 +156,21 @@ export default function MenusPage() {
     }
   };
 
+  const toggleSoldOut = async (m: Menu) => {
+    setError(null);
+    try {
+      const res = await fetch(`/api/stores/${storeId}/menus/${m.id}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ soldOut: !m.sold_out }),
+      });
+      if (!res.ok) throw new Error(String(res.status));
+      load();
+    } catch (e) {
+      setError(`품절 처리 실패 (${(e as Error).message})`);
+    }
+  };
+
   return (
     <>
       <AppHeader title="메뉴 관리" sub={storeName ?? `매장 ${storeId}`} />
@@ -179,7 +194,10 @@ export default function MenusPage() {
                   <img className="menu-thumb" src={m.image_url} alt="" />
                 )}
                 <div>
-                <div className="name">{m.name}</div>
+                <div className="name">
+                  {m.name}
+                  {m.sold_out && <span className="sold-badge">품절</span>}
+                </div>
                 <div className="meta">
                   {won(m.price)} · {m.tags.category ?? "-"} · 맵기{" "}
                   {m.tags.spicy ?? 0}
@@ -187,6 +205,12 @@ export default function MenusPage() {
                 </div>
               </div>
               <div style={{ display: "flex", gap: 6, flexShrink: 0 }}>
+                <button
+                  className={`btn ${m.sold_out ? "" : "ghost"}`}
+                  onClick={() => toggleSoldOut(m)}
+                >
+                  {m.sold_out ? "품절 해제" : "품절"}
+                </button>
                 <button className="btn ghost" onClick={() => openEdit(m)}>
                   수정
                 </button>

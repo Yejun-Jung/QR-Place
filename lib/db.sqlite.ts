@@ -53,7 +53,8 @@ CREATE TABLE IF NOT EXISTS menus (
   price       INTEGER NOT NULL DEFAULT 0,
   description TEXT,
   tags        TEXT NOT NULL DEFAULT '{}',
-  image_url   TEXT
+  image_url   TEXT,
+  sold_out    INTEGER NOT NULL DEFAULT 0
 );
 CREATE TABLE IF NOT EXISTS view_logs (
   id           INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -167,6 +168,9 @@ function db(): DatabaseSync {
   if (!menuCols.some((c) => c.name === "image_url")) {
     d.exec("ALTER TABLE menus ADD COLUMN image_url TEXT");
   }
+  if (!menuCols.some((c) => c.name === "sold_out")) {
+    d.exec("ALTER TABLE menus ADD COLUMN sold_out INTEGER NOT NULL DEFAULT 0");
+  }
   // 게스트 주문 기록용 휴대폰 식별값 (기존 데모 DB 파일에도 붙여준다)
   const orderCols = d.prepare("PRAGMA table_info(orders)").all() as {
     name: string;
@@ -238,6 +242,7 @@ interface MenuRow {
   description: string | null;
   tags: string | null;
   image_url: string | null;
+  sold_out: number;
 }
 
 export const sqliteAdapter: DbAdapter = {
@@ -354,7 +359,7 @@ export const sqliteAdapter: DbAdapter = {
 
   async getStoreMenus(storeId) {
     const rows = query<MenuRow>(
-      "SELECT id, store_id, name, price, description, tags, image_url FROM menus WHERE store_id = ? ORDER BY id",
+      "SELECT id, store_id, name, price, description, tags, image_url, sold_out FROM menus WHERE store_id = ? ORDER BY id",
       storeId,
     );
     return rows.map(
@@ -366,19 +371,20 @@ export const sqliteAdapter: DbAdapter = {
         description: r.description ?? null,
         tags: parseTags(r.tags),
         image_url: r.image_url ?? null,
+        sold_out: Boolean(r.sold_out),
       }),
     );
   },
 
   async getPairedMenus(menuId, limit = 3) {
     const rows = query<MenuRow & { cnt: number }>(
-      `SELECT m.id, m.store_id, m.name, m.price, m.description, m.tags, m.image_url,
+      `SELECT m.id, m.store_id, m.name, m.price, m.description, m.tags, m.image_url, m.sold_out,
               SUM(oi2.quantity) AS cnt
        FROM order_items oi1
        JOIN order_items oi2 ON oi2.order_id = oi1.order_id AND oi2.menu_id != oi1.menu_id
        JOIN orders o ON o.id = oi1.order_id AND o.status IN ('paid','served')
        JOIN menus m ON m.id = oi2.menu_id
-       WHERE oi1.menu_id = ? AND oi2.price > 0
+       WHERE oi1.menu_id = ? AND oi2.price > 0 AND m.sold_out = 0
        GROUP BY m.id
        ORDER BY cnt DESC
        LIMIT ?`,
@@ -394,6 +400,7 @@ export const sqliteAdapter: DbAdapter = {
         description: r.description ?? null,
         tags: parseTags(r.tags),
         image_url: r.image_url ?? null,
+        sold_out: Boolean(r.sold_out),
       }),
     );
   },
@@ -516,6 +523,7 @@ export const sqliteAdapter: DbAdapter = {
       description: input.description,
       tags: input.tags,
       image_url: input.imageUrl ?? null,
+      sold_out: false,
     } satisfies Menu;
   },
 
@@ -534,7 +542,7 @@ export const sqliteAdapter: DbAdapter = {
         menuId,
       );
     const row = queryOne<MenuRow | undefined>(
-      "SELECT id, store_id, name, price, description, tags, image_url FROM menus WHERE id = ?",
+      "SELECT id, store_id, name, price, description, tags, image_url, sold_out FROM menus WHERE id = ?",
       menuId,
     );
     if (!row) return null;
@@ -546,6 +554,7 @@ export const sqliteAdapter: DbAdapter = {
       description: row.description ?? null,
       tags: parseTags(row.tags),
       image_url: row.image_url ?? null,
+      sold_out: Boolean(row.sold_out),
     } satisfies Menu;
   },
 
@@ -553,16 +562,27 @@ export const sqliteAdapter: DbAdapter = {
     db().prepare("DELETE FROM menus WHERE id = ?").run(menuId);
   },
 
+  async setMenuSoldOut(menuId, soldOut) {
+    db().prepare("UPDATE menus SET sold_out = ? WHERE id = ?").run(soldOut ? 1 : 0, menuId);
+  },
+
   /* ---------------- 주문 / 결제 ---------------- */
 
   async createOrder(input: NewOrderInput) {
     const d = db();
     // 요청된 메뉴들의 현재 가격을 매장 범위 내에서 조회 (가격 위조 방지)
-    const menuRows = query<{ id: number; name: string; price: number }>(
-      `SELECT id, name, price FROM menus WHERE store_id = ?`,
+    const menuRows = query<{ id: number; name: string; price: number; sold_out: number }>(
+      `SELECT id, name, price, sold_out FROM menus WHERE store_id = ?`,
       input.storeId,
     );
     const menuMap = new Map(menuRows.map((m) => [Number(m.id), m]));
+    // 장바구니에 담아둔 사이 품절된 메뉴는 주문을 막는다
+    const soldOut = input.items
+      .map((it) => menuMap.get(Number(it.menuId)))
+      .filter((m) => m?.sold_out);
+    if (soldOut.length > 0) {
+      throw new Error(`품절된 메뉴가 있습니다: ${soldOut.map((m) => m?.name).join(", ")}`);
+    }
 
     const lines = input.items
       .map((it) => {

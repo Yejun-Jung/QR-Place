@@ -71,6 +71,7 @@ export interface DbAdapter {
   createMenu(storeId: number, input: MenuInput): Promise<Menu>;
   updateMenu(menuId: number, input: MenuInput): Promise<Menu | null>;
   deleteMenu(menuId: number): Promise<void>;
+  setMenuSoldOut(menuId: number, soldOut: boolean): Promise<void>;
 
   /* 주문 / 결제 */
   createOrder(input: NewOrderInput): Promise<Order>;
@@ -194,6 +195,9 @@ export async function updateMenu(menuId: number, input: MenuInput) {
 }
 export async function deleteMenu(menuId: number) {
   return (await getAdapter()).deleteMenu(menuId);
+}
+export async function setMenuSoldOut(menuId: number, soldOut: boolean) {
+  return (await getAdapter()).setMenuSoldOut(menuId, soldOut);
 }
 export async function createOrder(
   input: import("./types").NewOrderInput,

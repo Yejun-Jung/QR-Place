@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
 import { useParams } from "next/navigation";
 import { signOut } from "next-auth/react";
@@ -38,6 +38,23 @@ ChartJS.register(
 );
 
 const CHART_OPTS = { responsive: true, maintainAspectRatio: false } as const;
+
+/** 새 주문 알림음 "띵동" — 소리 파일 없이 Web Audio 로 두 음을 낸다 */
+function playDing(ctx: AudioContext) {
+  const now = ctx.currentTime;
+  [880, 660].forEach((freq, i) => {
+    const osc = ctx.createOscillator();
+    const gain = ctx.createGain();
+    osc.frequency.value = freq;
+    const t = now + i * 0.25;
+    gain.gain.setValueAtTime(0.0001, t);
+    gain.gain.exponentialRampToValueAtTime(0.3, t + 0.02);
+    gain.gain.exponentialRampToValueAtTime(0.0001, t + 0.5);
+    osc.connect(gain).connect(ctx.destination);
+    osc.start(t);
+    osc.stop(t + 0.5);
+  });
+}
 // 값 축은 0부터, 눈금은 정수만 (건수·명·원에 0.5 같은 눈금은 의미가 없다)
 const COUNT_AXIS = { beginAtZero: true, ticks: { precision: 0 } } as const;
 const LINE_OPTS = { ...CHART_OPTS, scales: { y: COUNT_AXIS } } as const;
@@ -71,8 +88,49 @@ export default function DashboardPage() {
   // 매장 이름은 자주 안 바뀌니 폴링과 별개로 한 번만 불러온다 (QR·메뉴 관리와 공용)
   const storeName = useStoreName(storeId);
 
+  // 새 주문 알림. 브라우저는 사용자가 한 번 누르기 전엔 소리를 막으므로
+  // "알림 켜기" 버튼을 눌러야 AudioContext 를 만들 수 있다.
+  const [soundOn, setSoundOn] = useState(false);
+  const audioRef = useRef<AudioContext | null>(null);
+  /** 이미 본 결제완료 주문 id — 여기 없는 결제완료 주문이 새 주문이다 */
+  const seenPaid = useRef<Set<number> | null>(null);
+  const seededRange = useRef<number | null>(null);
+
+  const toggleSound = () => {
+    if (soundOn) {
+      setSoundOn(false);
+      return;
+    }
+    audioRef.current ??= new AudioContext();
+    void audioRef.current.resume();
+    playDing(audioRef.current); // 켜자마자 한 번 울려서 소리가 나는지 확인
+    setSoundOn(true);
+  };
+
+  // 새 주문 감지: 첫 로드(또는 기간 변경 직후)에 이미 있던 주문은 조용히 기록만 한다
+  useEffect(() => {
+    const paidIds = orders.filter((o) => o.status === "paid").map((o) => o.id);
+    if (seenPaid.current == null || seededRange.current !== range) {
+      seenPaid.current = new Set(paidIds);
+      seededRange.current = range;
+      return;
+    }
+    const fresh = paidIds.filter((id) => !seenPaid.current!.has(id));
+    fresh.forEach((id) => seenPaid.current!.add(id));
+    if (fresh.length > 0 && soundOn && audioRef.current) playDing(audioRef.current);
+  }, [orders, range, soundOn]);
+
+  // 탭 제목에 처리 대기 주문 수 — 다른 탭을 보고 있어도 알 수 있게
+  const waitingCount = orders.filter((o) => o.status === "paid").length;
+  useEffect(() => {
+    const base = document.title.replace(/^\(\d+\) 새 주문 · /, "");
+    document.title = waitingCount > 0 ? `(${waitingCount}) 새 주문 · ${base}` : base;
+  }, [waitingCount]);
+
   // 새 주문이 들어오면 자동으로 반영되도록, 대시보드가 열려있는 동안
-  // 5초마다 매출/주문을 다시 불러온다(탭이 백그라운드일 땐 쉼).
+  // 5초마다 매출/주문을 다시 불러온다. 주문 알림 때문에 탭이 백그라운드여도 계속 부른다.
+  // ponytail: 크롬은 5분 넘게 숨겨진 탭의 타이머를 1분 간격으로 늦춘다 — 알림이
+  // 늦으면 대시보드를 별도 창으로 띄워 두는 게 확실하다 (푸시 알림은 과한 범위).
   useEffect(() => {
     let cancelled = false;
 
@@ -104,20 +162,12 @@ export default function DashboardPage() {
           );
         });
     };
-    // 탭이 보일 때만 부른다 — 최초 진입은 무조건 불러오고, 이후 폴링/탭
-    // 복귀 시점엔 백그라운드 탭에서 불필요한 요청 안 하게 건너뛴다.
-    const loadIfVisible = () => {
-      if (!document.hidden) load();
-    };
-
     load();
-    const interval = setInterval(loadIfVisible, 5000);
-    document.addEventListener("visibilitychange", loadIfVisible);
+    const interval = setInterval(load, 5000);
 
     return () => {
       cancelled = true;
       clearInterval(interval);
-      document.removeEventListener("visibilitychange", loadIfVisible);
     };
   }, [storeId, range]);
 
@@ -231,6 +281,13 @@ export default function DashboardPage() {
             최근 {d}일
           </button>
         ))}
+        <button
+          className={soundOn ? "active" : ""}
+          style={{ marginLeft: "auto" }}
+          onClick={toggleSound}
+        >
+          {soundOn ? "🔔 주문 알림 켜짐" : "🔕 주문 알림 켜기"}
+        </button>
       </div>
 
       <div

@@ -58,7 +58,9 @@ export async function POST(
       getMenuPopularity(id, WINDOW_DAYS),
       getUserRecentLogs(userId, WINDOW_DAYS, 50),
     ]);
-    menu = pickRoulette(recommendMenus(menus, logs, popularity), PRIZE_POOL_SIZE);
+    // 품절 메뉴는 무료증정 후보에서 뺀다
+    const available = menus.filter((m) => !m.sold_out);
+    menu = pickRoulette(recommendMenus(available, logs, popularity), PRIZE_POOL_SIZE);
   }
 
   await recordSpin(userId, id, { kind: prize.kind, menuId: menu?.id ?? null });

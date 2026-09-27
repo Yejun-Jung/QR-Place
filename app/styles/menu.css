@@ -145,6 +145,23 @@
   margin-left: 6px;
 }
 
+/* ── 품절 ── */
+.menu-row.sold-out {
+  opacity: 0.5;
+  cursor: default;
+}
+.sold-badge {
+  display: inline-block;
+  margin-left: 6px;
+  padding: 1px 7px;
+  border-radius: 999px;
+  background: #fee2e2;
+  color: #b91c1c;
+  font-size: 0.7rem;
+  font-weight: 700;
+  vertical-align: middle;
+}
+
 /* ── 장바구니 담기 토스트 (헤더 바로 아래 — 하단은 장바구니 바·주문 기록 버튼과 겹친다) ── */
 .toast {
   position: fixed;

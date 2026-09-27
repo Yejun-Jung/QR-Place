@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { deleteMenu, getPairedMenus, updateMenu } from "@/lib/db";
+import { deleteMenu, getPairedMenus, setMenuSoldOut, updateMenu } from "@/lib/db";
 import { denyUnlessStoreOwner } from "@/lib/authz";
 import type { MenuInput, MenuTags } from "@/lib/types";
 
@@ -110,6 +110,43 @@ export async function DELETE(
     return NextResponse.json({ ok: true });
   } catch (err) {
     console.error("DELETE /api/stores/[storeId]/menus/[menuId] failed", err);
+    return NextResponse.json({ error: "db error" }, { status: 500 });
+  }
+}
+
+/**
+ * PATCH /api/stores/[storeId]/menus/[menuId]
+ * body: { soldOut: boolean } → 품절 / 품절 해제 (점주용)
+ */
+export async function PATCH(
+  req: NextRequest,
+  { params }: { params: Promise<{ storeId: string; menuId: string }> },
+) {
+  const { storeId: storeIdRaw, menuId: menuIdRaw } = await params;
+  const storeId = Number(storeIdRaw);
+  const menuId = Number(menuIdRaw);
+  if (!Number.isFinite(storeId) || !Number.isFinite(menuId)) {
+    return NextResponse.json({ error: "invalid menuId" }, { status: 400 });
+  }
+
+  const denied = await denyUnlessStoreOwner(storeId, menuId);
+  if (denied) return denied;
+
+  let body: Record<string, unknown>;
+  try {
+    body = await req.json();
+  } catch {
+    return NextResponse.json({ error: "invalid JSON body" }, { status: 400 });
+  }
+  if (typeof body.soldOut !== "boolean") {
+    return NextResponse.json({ error: "soldOut must be boolean" }, { status: 400 });
+  }
+
+  try {
+    await setMenuSoldOut(menuId, body.soldOut);
+    return NextResponse.json({ ok: true });
+  } catch (err) {
+    console.error("PATCH /api/stores/[storeId]/menus/[menuId] failed", err);
     return NextResponse.json({ error: "db error" }, { status: 500 });
   }
 }

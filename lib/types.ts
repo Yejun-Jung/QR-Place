@@ -18,6 +18,8 @@ export interface Menu {
   tags: MenuTags;
   /** 메뉴 사진 (Vercel Blob URL). 없으면 메뉴판에 사진 없이 표시된다. */
   image_url: string | null;
+  /** 품절 — 점주가 켜고 끈다. 손님 메뉴판에서 담을 수 없고 주문도 서버에서 막는다. */
+  sold_out: boolean;
 }
 
 /** 메뉴 생성/수정 시 클라이언트가 보내는 입력값 */
