@@ -17,6 +17,7 @@ import type { Menu, RankedMenu, Store } from "@/lib/types";
 import RouletteModal from "./RouletteModal";
 import KakaoIcon from "@/app/ui/KakaoIcon";
 import { usePolling } from "@/app/ui/usePolling";
+import { buzz } from "@/app/ui/buzz";
 
 /** 점주가 처리한 주문을 손님에게 알리기 위한 최소 정보 */
 interface OrderNotice {
@@ -74,6 +75,8 @@ function MenuBoard() {
   const [notices, setNotices] = useState<OrderNotice[]>([]);
   /** 장바구니 담기 확인 토스트 — 잠깐 떴다가 사라진다 */
   const [toast, setToast] = useState<string | null>(null);
+  /** 직전 확인 때 점주 처리를 기다리던 주문 — 이게 완료/거절로 바뀌는 순간에만 진동 */
+  const waitingIds = useRef<Set<number>>(new Set());
   const toastTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const showAddedToast = (name: string) => {
     setToast(`${name}${subjectJosa(name)} 담겼습니다`);
@@ -136,6 +139,12 @@ function MenuBoard() {
       (o) =>
         (o.status === "served" || o.status === "rejected") &&
         !seen.includes(o.id),
+    );
+    // 페이지를 새로 열었을 때 예전 알림이 다시 떠도 진동하지 않도록,
+    // 열어둔 동안 '대기 → 처리됨'으로 바뀐 주문이 있을 때만 울린다
+    if (fresh.some((o) => waitingIds.current.has(o.id))) buzz();
+    waitingIds.current = new Set(
+      d.orders.filter((o) => o.status === "paid").map((o) => o.id),
     );
     if (fresh.length > 0) {
       setNotices((prev) => {

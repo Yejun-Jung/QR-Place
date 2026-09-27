@@ -1,8 +1,9 @@
 "use client";
 
-import { Suspense, useState } from "react";
+import { Suspense, useRef, useState } from "react";
 import { useParams, useRouter, useSearchParams } from "next/navigation";
 import { usePolling } from "@/app/ui/usePolling";
+import { buzz } from "@/app/ui/buzz";
 import { won } from "@/lib/useCart";
 import {
   ORDER_STATUS_LABEL,
@@ -24,6 +25,8 @@ function OrderView() {
   const [order, setOrder] = useState<Order | null>(null);
   const [store, setStore] = useState<Store | null>(null);
   const [error, setError] = useState<string | null>(null);
+  /** 직전 상태 — 이 화면을 보는 중에 대기 → 완료/거절로 바뀌면 진동 */
+  const prevStatus = useRef<string | null>(null);
 
   // 점주가 완료/거절하면 이 화면에도 바로 반영한다.
   // 아직 처리 전(paid)이면 2.5초, 처리가 끝났으면 느리게 확인한다 (usePolling).
@@ -34,6 +37,8 @@ function OrderView() {
       return false;
     }
     const j = (await r.json()) as { order: Order; store: Store };
+    if (prevStatus.current === "paid" && j.order.status !== "paid") buzz();
+    prevStatus.current = j.order.status;
     setOrder(j.order);
     setStore(j.store);
     return j.order.status === "paid"; // 점주 처리를 기다리는 동안만 빠르게
