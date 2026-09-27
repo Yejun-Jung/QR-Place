@@ -66,7 +66,7 @@ DB를 초기화하려면: `npm run db:reset` (`qr-place.db` 삭제 → 다음 �
 
 ```bash
 npm run lint      # ESLint (flat config, eslint.config.mjs)
-npm test          # 유닛 테스트 52개 — 추천·권한 가드·주문 검증·문구·QR·카카오·지도
+npm test          # 유닛 테스트 60개 — 추천·권한 가드·주문 검증·문구·QR·카카오·지도
 npm run smoke     # SQLite 어댑터 쿼리 스모크 (로컬 qr-place.db)
 ```
 

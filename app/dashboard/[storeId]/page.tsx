@@ -185,27 +185,47 @@ export default function DashboardPage() {
     document.title = waitingCount > 0 ? `(${waitingCount}) 새 주문 · ${base}` : base;
   }, [waitingCount]);
 
-  // 새 주문이 들어오면 자동으로 반영되도록, 대시보드가 열려있는 동안
-  // 5초마다 매출/주문을 다시 불러온다. 주문 알림 때문에 탭이 백그라운드여도 계속 부른다.
+  // 새 주문이 들어오면 자동으로 반영되도록, 대시보드가 열려있는 동안 주문은 5초마다 부른다.
+  // 통계(쿼리 3개)는 주문이 결제·완료·거절로 바뀐 순간 바로, 그 외엔 30초마다만 부른다 —
+  // 매번 부르면 DB만 바쁘고, 30초만 기다리면 새 주문이 들어와도 매출 숫자가 늦게 바뀐다.
+  // 주문 알림 때문에 탭이 백그라운드여도 계속 부른다.
   // ponytail: 크롬은 5분 넘게 숨겨진 탭의 타이머를 1분 간격으로 늦춘다 — 알림이
   // 늦으면 대시보드를 별도 창으로 띄워 두는 게 확실하다 (푸시 알림은 과한 범위).
   useEffect(() => {
     let cancelled = false;
+    let tick = 0;
+    /** 결제 이후 주문들의 id:상태 — 이게 바뀌면 매출·인기 메뉴도 바뀐 것 */
+    let lastSig: string | null = null;
+
+    const fetchStats = () =>
+      fetch(`/api/stores/${storeId}/stats?range=${range}d`).then((r) =>
+        r.ok ? r.json() : Promise.reject(new Error("stats " + r.status)),
+      );
 
     const load = () => {
+      const withStats = tick++ % 6 === 0; // 변화가 없어도 5초 × 6 = 30초마다는 통계
       Promise.all([
-        fetch(`/api/stores/${storeId}/stats?range=${range}d`).then((r) =>
-          r.ok ? r.json() : Promise.reject(new Error("stats " + r.status)),
-        ),
+        withStats ? fetchStats() : null,
         fetch(`/api/stores/${storeId}/orders?range=${range}d`).then((r) =>
           r.ok ? r.json() : Promise.reject(new Error("orders " + r.status)),
         ),
       ])
-        .then(([s, o]) => {
+        .then(([s, o]: [Stats | null, { orders: OrderRow[] }]) => {
           if (cancelled) return;
-          setStats(s);
+          if (s) setStats(s);
           setOrders(o.orders);
           setError(null);
+
+          const sig = o.orders
+            .filter((x) => x.status !== "pending")
+            .map((x) => `${x.id}:${x.status}`)
+            .join(",");
+          if (lastSig !== null && sig !== lastSig && !withStats) {
+            fetchStats()
+              .then((fresh: Stats) => !cancelled && setStats(fresh))
+              .catch(() => {}); // 다음 30초 주기에 다시 시도된다
+          }
+          lastSig = sig;
         })
         .catch((e) => {
           if (cancelled) return;
