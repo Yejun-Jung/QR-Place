@@ -47,7 +47,22 @@ export async function denyUnlessStoreOwner(
   return null;
 }
 
-const normalizeTable = (v: string | null | undefined) =>
+/**
+ * 요청의 유저 id 를 정한다. 로그인 세션이 있으면 그 값만 쓴다.
+ * 세션이 없을 때 클라이언트가 보낸 userId(데모용 ?userId= 흐름)는 개발 환경에서만
+ * 받아준다 — 배포본에서 받아주면 남의 id 로 로그를 쌓거나, 남의 룰렛 당첨을
+ * 주문에 쓰거나, 남의 추천 결과를 볼 수 있다.
+ */
+export async function resolveUserId(claimed: unknown): Promise<number | null> {
+  const session = await auth();
+  if (session?.user?.id) return session.user.id;
+  if (process.env.NODE_ENV === "production") return null;
+  if (claimed == null || claimed === "") return null;
+  const id = Number(claimed);
+  return Number.isFinite(id) ? id : null;
+}
+
+const normalizeTable =(v: string | null | undefined) =>
   v == null || v === "" ? null : v;
 
 /**

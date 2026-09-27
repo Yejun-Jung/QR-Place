@@ -4,7 +4,7 @@
  * 여기가 깨지면 곧바로 "남의 매장 매출이 보인다 / 남의 주문을 취소할 수 있다"로
  * 이어지므로, 통과(null)와 차단(4xx) 양쪽을 모두 고정해둔다.
  */
-import { beforeEach, describe, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import type { Order, Store } from "../types";
 
 const mockAuth = vi.fn();
@@ -17,7 +17,8 @@ vi.mock("@/lib/db", () => ({
   getStoreMenus: (id: number) => mockGetStoreMenus(id),
 }));
 
-const { denyUnlessOrderOwner, denyUnlessStoreOwner } = await import("../authz");
+const { denyUnlessOrderOwner, denyUnlessStoreOwner, resolveUserId } =
+  await import("../authz");
 
 const store: Store = {
   id: 1,
@@ -109,5 +110,27 @@ describe("denyUnlessOrderOwner", () => {
     expect(
       (await denyUnlessOrderOwner(order({ table_number: null }), "A1"))?.status,
     ).toBe(403);
+  });
+});
+
+describe("resolveUserId", () => {
+  afterEach(() => vi.unstubAllEnvs());
+
+  it("로그인 세션이 있으면 클라이언트가 보낸 id 는 무시한다", async () => {
+    mockAuth.mockResolvedValue({ user: { id: 7 } });
+    expect(await resolveUserId("1")).toBe(7);
+  });
+
+  it("배포 환경에서는 비로그인 요청의 userId 를 받지 않는다", async () => {
+    vi.stubEnv("NODE_ENV", "production");
+    mockAuth.mockResolvedValue(null);
+    expect(await resolveUserId("1")).toBeNull();
+  });
+
+  it("개발 환경에서는 데모용 ?userId= 를 받아준다", async () => {
+    mockAuth.mockResolvedValue(null);
+    expect(await resolveUserId("1")).toBe(1);
+    expect(await resolveUserId("")).toBeNull();
+    expect(await resolveUserId("abc")).toBeNull();
   });
 });

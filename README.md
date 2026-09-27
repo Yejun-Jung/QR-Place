@@ -43,6 +43,7 @@ npm run dev
 
 - 고객 메뉴판(비로그인·인기순): <http://localhost:3000/stores/1?table=A1>
 - 개인화(유저 1 · 매운맛 취향): <http://localhost:3000/stores/1?table=A1&userId=1>
+  (`?userId=` 는 로컬 데모용 — 배포본에서는 무시되고 카카오 로그인 세션만 쓴다)
 - 점주 대시보드: <http://localhost:3000/dashboard> (카카오 로그인 → 내 매장 등록 → 내 대시보드)
 
 > 점주용 API(매출 통계·주문 목록·메뉴 CRUD)는 **그 매장의 소유자만** 접근할 수 있다.
@@ -65,7 +66,7 @@ DB를 초기화하려면: `npm run db:reset` (`qr-place.db` 삭제 → 다음 �
 
 ```bash
 npm run lint      # ESLint (flat config, eslint.config.mjs)
-npm test          # 유닛 테스트 45개 — 추천·권한 가드·주문 검증·문구·QR·카카오·지도
+npm test          # 유닛 테스트 52개 — 추천·권한 가드·주문 검증·문구·QR·카카오·지도
 npm run smoke     # SQLite 어댑터 쿼리 스모크 (로컬 qr-place.db)
 ```
 
@@ -183,6 +184,8 @@ scripts/
 - **점주 데이터**: 매출·주문·메뉴 CRUD 는 `stores.owner_user_id` 와 세션이 일치해야 한다.
   메뉴 단건 조작은 그 메뉴가 해당 매장 것인지까지 확인한다.
 - **주문 결제·취소**: 주문 id 가 순차 정수라, 테이블 번호나 본인 세션이 일치해야 허용한다.
+- **유저 id**: 로그·주문·개인화 메뉴 조회는 로그인 세션의 id 만 쓴다. 클라이언트가 보낸
+  `userId` 는 개발 환경의 데모 흐름에서만 받는다 (`resolveUserId`).
 
 가드는 `lib/authz.ts` 한 곳에 모여 있고, `lib/__tests__/authz.test.ts` 로 통과/차단 양쪽을 고정해뒀다.
 

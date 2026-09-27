@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { auth } from "@/auth";
+import { resolveUserId } from "@/lib/authz";
 import { createOrder, getTodaySpin, redeemSpin } from "@/lib/db";
 
 export const runtime = "nodejs";
@@ -8,8 +8,8 @@ export const runtime = "nodejs";
  * POST /api/orders
  * body: { storeId, tableNumber?, userId?, items: [{ menuId, quantity }] }
  * → 'pending' 주문 생성. 가격/이름은 서버에서 DB 기준으로 스냅샷 (위조 방지).
- * userId 는 로그인 세션이 있으면 세션 값을 우선하고, 없으면 body 의 값(데모용
- * ?userId= 흐름)으로 폴백한다.
+ * userId 는 로그인 세션 값을 쓴다. body 의 값(데모용 ?userId= 흐름)은 개발
+ * 환경에서만 폴백으로 받는다 (lib/authz.ts resolveUserId).
  */
 export async function POST(req: NextRequest) {
   let body: Record<string, unknown>;
@@ -43,12 +43,7 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "no valid items" }, { status: 400 });
   }
 
-  const session = await auth();
-  const bodyUserId =
-    body.userId == null || body.userId === "" ? null : Number(body.userId);
-  const userId =
-    session?.user?.id ??
-    (Number.isFinite(bodyUserId as number) ? (bodyUserId as number) : null);
+  const userId = await resolveUserId(body.userId);
 
   // 0원 처리되는 free 항목은 클라이언트 말만 믿으면 안 된다 — 오늘 이 매장에서
   // 실제로 "추천 메뉴 무료 증정"에 당첨된 기록(roulette_spins)과 대조한다.

@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { auth } from "@/auth";
+import { resolveUserId } from "@/lib/authz";
 import { insertViewLog } from "@/lib/db";
 import type { ActionType } from "@/lib/types";
 
@@ -12,8 +12,8 @@ export const runtime = "nodejs";
  *
  * 비로그인(userId 없음)도 로그는 남긴다. 개인화에는 안 쓰이지만
  * 인기 메뉴 집계(콜드 스타트)에는 사용된다.
- * userId 는 로그인 세션이 있으면 세션 값을 우선하고, 없으면 body 의 값(데모용
- * ?userId= 흐름)으로 폴백한다.
+ * userId 는 로그인 세션 값을 쓴다. body 의 값(데모용 ?userId= 흐름)은 개발
+ * 환경에서만 폴백으로 받는다 (lib/authz.ts resolveUserId).
  */
 export async function POST(req: NextRequest) {
   let body: Record<string, unknown>;
@@ -40,12 +40,7 @@ export async function POST(req: NextRequest) {
     );
   }
 
-  const session = await auth();
-  const bodyUserId =
-    body.userId == null || body.userId === "" ? null : Number(body.userId);
-  const userId =
-    session?.user?.id ??
-    (Number.isFinite(bodyUserId as number) ? (bodyUserId as number) : null);
+  const userId = await resolveUserId(body.userId);
   const tableNumber =
     body.tableNumber == null ? null : String(body.tableNumber);
 

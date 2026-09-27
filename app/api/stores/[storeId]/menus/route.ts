@@ -8,7 +8,7 @@ import {
   parseRangeDays,
 } from "@/lib/db";
 import { generateBlurb } from "@/lib/blurb";
-import { denyUnlessStoreOwner } from "@/lib/authz";
+import { denyUnlessStoreOwner, resolveUserId } from "@/lib/authz";
 import { recommendMenus } from "@/lib/recommend";
 import type { LogEntry, MenuInput, MenuTags } from "@/lib/types";
 
@@ -32,8 +32,7 @@ export async function GET(
   }
 
   const url = new URL(req.url);
-  const userIdRaw = url.searchParams.get("userId");
-  const userId = userIdRaw ? Number(userIdRaw) : null;
+  const userId = await resolveUserId(url.searchParams.get("userId"));
   const days = parseRangeDays(url.searchParams.get("days"), 30);
 
   try {
@@ -48,7 +47,7 @@ export async function GET(
     }
 
     let logs: LogEntry[] = [];
-    if (userId && Number.isFinite(userId)) {
+    if (userId) {
       logs = await getUserRecentLogs(userId, days, 50);
     }
 
