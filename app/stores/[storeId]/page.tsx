@@ -35,6 +35,9 @@ const readSeen = (storeId: string): number[] => {
     return [];
   }
 };
+/** 주문 완료/거절 알림이 자동으로 닫히기까지의 시간 */
+const NOTICE_AUTO_CLOSE_MS = 10_000;
+
 const markSeen = (storeId: string, ids: number[]) => {
   try {
     const merged = [...new Set([...readSeen(storeId), ...ids])].slice(-50);
@@ -173,6 +176,26 @@ function MenuBoard() {
     markSeen(storeId, [id]);
     setNotices((prev) => prev.filter((n) => n.id !== id));
   };
+
+  // 완료/거절 알림은 뜬 지 10초 뒤 자동으로 닫는다 (X로 닫은 것과 같이 기억해 다시 안 뜸).
+  // 알림마다 자기 타이머를 한 번만 건다 — 새 알림이 와도 기존 알림 시간이 늘어나지 않게.
+  const noticeTimers = useRef(new Map<number, ReturnType<typeof setTimeout>>());
+  useEffect(() => {
+    for (const n of notices) {
+      if (noticeTimers.current.has(n.id)) continue;
+      noticeTimers.current.set(
+        n.id,
+        setTimeout(() => {
+          markSeen(storeId, [n.id]);
+          setNotices((prev) => prev.filter((x) => x.id !== n.id));
+        }, NOTICE_AUTO_CLOSE_MS),
+      );
+    }
+  }, [notices, storeId]);
+  useEffect(() => {
+    const timers = noticeTimers.current;
+    return () => timers.forEach(clearTimeout);
+  }, []);
 
   const openSheet = (m: RankedMenu) => {
     setOpenMenu(m);
