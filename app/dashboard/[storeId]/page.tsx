@@ -17,6 +17,7 @@ import {
 } from "chart.js";
 import { Bar, Line } from "react-chartjs-2";
 import { useStoreName } from "@/app/ui/useStoreName";
+import { fillDays } from "@/lib/chartDays";
 import { won } from "@/lib/useCart";
 import {
   ORDER_STATUS_LABEL,
@@ -37,6 +38,9 @@ ChartJS.register(
 );
 
 const CHART_OPTS = { responsive: true, maintainAspectRatio: false } as const;
+// 값 축은 0부터, 눈금은 정수만 (건수·명·원에 0.5 같은 눈금은 의미가 없다)
+const COUNT_AXIS = { beginAtZero: true, ticks: { precision: 0 } } as const;
+const LINE_OPTS = { ...CHART_OPTS, scales: { y: COUNT_AXIS } } as const;
 
 interface Stats {
   rangeDays: number;
@@ -143,7 +147,11 @@ export default function DashboardPage() {
   };
 
   const revenueChart = useMemo(() => {
-    const rows = stats?.revenueByDay ?? [];
+    const rows = fillDays(stats?.revenueByDay ?? [], range, (date) => ({
+      date,
+      orders: 0,
+      revenue: 0,
+    }));
     return {
       labels: rows.map((r) => r.date.slice(5)),
       datasets: [
@@ -157,10 +165,14 @@ export default function DashboardPage() {
         },
       ],
     };
-  }, [stats]);
+  }, [stats, range]);
 
   const visitorChart = useMemo(() => {
-    const rows = stats?.dailyVisitors ?? [];
+    const rows = fillDays(stats?.dailyVisitors ?? [], range, (date) => ({
+      date,
+      views: 0,
+      visitors: 0,
+    }));
     return {
       labels: rows.map((r) => r.date.slice(5)),
       datasets: [
@@ -180,7 +192,7 @@ export default function DashboardPage() {
         },
       ],
     };
-  }, [stats]);
+  }, [stats, range]);
 
   const menuChart = useMemo(() => {
     const rows = stats?.popularMenus ?? [];
@@ -231,10 +243,12 @@ export default function DashboardPage() {
         }}
       >
         <Link href={`/dashboard/${storeId}/menus`} className="btn ghost row">
-          메뉴 관리
+          <span>📋 메뉴 관리</span>
+          <span aria-hidden="true">→</span>
         </Link>
         <Link href={`/dashboard/${storeId}/qr`} className="btn ghost row">
-          테이블 QR 코드 생성
+          <span>🔳 테이블 QR 코드 생성</span>
+          <span aria-hidden="true">→</span>
         </Link>
       </div>
 
@@ -265,14 +279,14 @@ export default function DashboardPage() {
       <div className="chart-box gc-revenue">
         <h3>일별 매출</h3>
         <div style={{ position: "relative", height: 240 }}>
-          <Line data={revenueChart} options={CHART_OPTS} />
+          <Line data={revenueChart} options={LINE_OPTS} />
         </div>
       </div>
 
       <div className="chart-box gc-visitors">
         <h3>일별 방문자 · 조회</h3>
         <div style={{ position: "relative", height: 240 }}>
-          <Line data={visitorChart} options={CHART_OPTS} />
+          <Line data={visitorChart} options={LINE_OPTS} />
         </div>
       </div>
 
@@ -284,6 +298,7 @@ export default function DashboardPage() {
             options={{
               ...CHART_OPTS,
               indexAxis: "y" as const,
+              scales: { x: COUNT_AXIS },
               plugins: { legend: { display: false } },
             }}
           />

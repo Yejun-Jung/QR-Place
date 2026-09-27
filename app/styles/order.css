@@ -277,6 +277,14 @@ select.inp:focus {
   background: #fef9c3;
   color: #a16207;
 }
+.status.served {
+  background: #dbeafe;
+  color: #1d4ed8;
+}
+.status.rejected {
+  background: #fee2e2;
+  color: #b91c1c;
+}
 .status.cancelled {
   background: #f4f4f5;
   color: #71717a;
