@@ -341,7 +341,9 @@ function MenuBoard() {
                       <div className="desc">{m.description}</div>
                     )}
                     <div className="meta">
-                      {m.tags.category ?? "-"} · 맵기 {m.tags.spicy ?? 0} ·
+                      {m.tags.category ?? "-"} ·{" "}
+                      {(m.tags.spicy ?? 0) > 0 &&
+                        `${"🌶️".repeat(Math.min(m.tags.spicy ?? 0, 5))} · `}
                       최근 주문 {m.popularity}건
                     </div>
                   </div>

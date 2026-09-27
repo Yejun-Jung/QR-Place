@@ -20,6 +20,10 @@
   overflow-x: auto;
   padding: 8px 16px 12px;
   -webkit-overflow-scrolling: touch;
+  scrollbar-width: none; /* 가로 스크롤은 되고 스크롤바 선만 숨긴다 */
+}
+.chips::-webkit-scrollbar {
+  display: none;
 }
 .chip {
   flex: none;
