@@ -309,7 +309,7 @@ export const postgresAdapter: DbAdapter = {
 
   async getOrder(orderId) {
     const { rows } = await sql<Omit<Order, "items">>`
-      SELECT id, store_id, user_id, table_number, status, payment_method,
+      SELECT id, daily_no, store_id, user_id, table_number, status, payment_method,
              total_amount, created_at, paid_at
       FROM orders WHERE id = ${orderId}
     `;
@@ -328,9 +328,17 @@ export const postgresAdapter: DbAdapter = {
     if (!order) return null;
     if (order.status === "paid") return order;
 
+    // 오늘(한국 시간) 이 매장에서 결제된 주문 중 가장 큰 번호 + 1 → 자정마다 1번부터.
+    // ponytail: 같은 매장에서 두 결제가 정확히 동시에 오면 번호가 겹칠 수 있다 —
+    // 문제되면 (store_id, 날짜, daily_no) 유니크 인덱스 + 재시도.
     await sql`
       UPDATE orders
-      SET status = 'paid', payment_method = ${method}, paid_at = NOW()
+      SET status = 'paid', payment_method = ${method}, paid_at = NOW(),
+          daily_no = (
+            SELECT COALESCE(MAX(daily_no), 0) + 1 FROM orders
+            WHERE store_id = ${order.store_id}
+              AND paid_at >= date_trunc('day', NOW() AT TIME ZONE 'Asia/Seoul') AT TIME ZONE 'Asia/Seoul'
+          )
       WHERE id = ${orderId}
     `;
     for (const it of order.items) {
@@ -368,7 +376,7 @@ export const postgresAdapter: DbAdapter = {
     // 같은 테이블의 일행·다음 손님 주문까지 보여서 쓰지 않는다.
     if (guestToken == null && userId == null) return [];
     const { rows } = await sql<CustomerOrderRow>`
-      SELECT o.id, o.table_number, o.status, o.payment_method, o.total_amount,
+      SELECT o.id, o.daily_no, o.table_number, o.status, o.payment_method, o.total_amount,
              o.created_at,
              COALESCE((SELECT SUM(quantity)::int FROM order_items WHERE order_id = o.id), 0) AS item_count,
              (SELECT string_agg(name || ' x' || quantity, ', ')
@@ -388,7 +396,7 @@ export const postgresAdapter: DbAdapter = {
 
   async listOrders(storeId, days, limit = 50): Promise<CustomerOrderRow[]> {
     const { rows } = await sql<CustomerOrderRow>`
-      SELECT o.id, o.table_number, o.status, o.payment_method, o.total_amount,
+      SELECT o.id, o.daily_no, o.table_number, o.status, o.payment_method, o.total_amount,
              o.created_at,
              COALESCE((SELECT SUM(quantity)::int FROM order_items WHERE order_id = o.id), 0) AS item_count,
              (SELECT string_agg(name || ' x' || quantity, ', ')

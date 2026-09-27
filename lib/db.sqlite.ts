@@ -71,6 +71,7 @@ CREATE TABLE IF NOT EXISTS orders (
   user_id        INTEGER REFERENCES users(id) ON DELETE SET NULL,
   table_number   TEXT,
   guest_token    TEXT,
+  daily_no       INTEGER,
   status         TEXT NOT NULL DEFAULT 'pending' CHECK (status IN ('pending','paid','served','rejected','cancelled')),
   payment_method TEXT CHECK (payment_method IN ('card','kakaopay','counter')),
   total_amount   INTEGER NOT NULL DEFAULT 0,
@@ -177,6 +178,9 @@ function db(): DatabaseSync {
   }[];
   if (!orderCols.some((c) => c.name === "guest_token")) {
     d.exec("ALTER TABLE orders ADD COLUMN guest_token TEXT");
+  }
+  if (!orderCols.some((c) => c.name === "daily_no")) {
+    d.exec("ALTER TABLE orders ADD COLUMN daily_no INTEGER");
   }
   // 룰렛 당첨 상품 컬럼 (기존 데모 DB 파일에도 붙여준다)
   const spinCols = d.prepare("PRAGMA table_info(roulette_spins)").all() as {
@@ -634,6 +638,7 @@ export const sqliteAdapter: DbAdapter = {
   async getOrder(orderId) {
     const o = queryOne<{
       id: number;
+      daily_no: number | null;
       store_id: number;
       user_id: number | null;
       table_number: string | null;
@@ -643,7 +648,7 @@ export const sqliteAdapter: DbAdapter = {
       created_at: string;
       paid_at: string | null;
     }>(
-      `SELECT id, store_id, user_id, table_number, status, payment_method,
+      `SELECT id, daily_no, store_id, user_id, table_number, status, payment_method,
               total_amount, created_at, paid_at
        FROM orders WHERE id = ?`,
       orderId,
@@ -665,6 +670,7 @@ export const sqliteAdapter: DbAdapter = {
 
     return {
       id: Number(o.id),
+      daily_no: o.daily_no == null ? null : Number(o.daily_no),
       store_id: Number(o.store_id),
       user_id: o.user_id == null ? null : Number(o.user_id),
       table_number: o.table_number,
@@ -687,9 +693,14 @@ export const sqliteAdapter: DbAdapter = {
     d.exec("BEGIN");
     try {
       d.prepare(
-        `UPDATE orders SET status='paid', payment_method=?, paid_at=datetime('now')
+        // 오늘(한국 시간) 이 매장에서 결제된 주문 중 가장 큰 번호 + 1 → 자정마다 1번부터
+        `UPDATE orders SET status='paid', payment_method=?, paid_at=datetime('now'),
+           daily_no = (
+             SELECT COALESCE(MAX(daily_no), 0) + 1 FROM orders
+             WHERE store_id = ? AND paid_at >= datetime('now', '+9 hours', 'start of day', '-9 hours')
+           )
          WHERE id=?`,
-      ).run(method, orderId);
+      ).run(method, order.store_id, orderId);
 
       // 결제 확정 시 추천용 주문 로그 적재 (스펙 4장: order 신호)
       const insLog = d.prepare(
@@ -732,7 +743,7 @@ export const sqliteAdapter: DbAdapter = {
     // 같은 테이블의 일행·다음 손님 주문까지 보여서 쓰지 않는다.
     if (guestToken == null && userId == null) return [];
     const rows = query<CustomerOrderRow>(
-      `SELECT o.id, o.table_number, o.status, o.payment_method, o.total_amount,
+      `SELECT o.id, o.daily_no, o.table_number, o.status, o.payment_method, o.total_amount,
               o.created_at,
               (SELECT COALESCE(SUM(quantity), 0) FROM order_items WHERE order_id = o.id) AS item_count,
               (SELECT group_concat(name || ' x' || quantity, ', ')
@@ -759,7 +770,7 @@ export const sqliteAdapter: DbAdapter = {
 
   async listOrders(storeId, days, limit = 50): Promise<CustomerOrderRow[]> {
     const rows = query<CustomerOrderRow>(
-      `SELECT o.id, o.table_number, o.status, o.payment_method, o.total_amount,
+      `SELECT o.id, o.daily_no, o.table_number, o.status, o.payment_method, o.total_amount,
               o.created_at,
               (SELECT COALESCE(SUM(quantity), 0) FROM order_items WHERE order_id = o.id) AS item_count,
               (SELECT group_concat(name || ' x' || quantity, ', ')
@@ -774,6 +785,7 @@ export const sqliteAdapter: DbAdapter = {
     );
     return rows.map((r) => ({
       id: Number(r.id),
+      daily_no: r.daily_no == null ? null : Number(r.daily_no),
       table_number: r.table_number,
       status: r.status,
       payment_method: r.payment_method,

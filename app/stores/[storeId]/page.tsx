@@ -13,7 +13,7 @@ import { useParams, useSearchParams } from "next/navigation";
 import { signIn, signOut, useSession } from "next-auth/react";
 import { useCart, won } from "@/lib/useCart";
 import { subjectJosa } from "@/lib/josa";
-import type { Menu, RankedMenu, Store } from "@/lib/types";
+import { orderNoLabel, type Menu, type RankedMenu, type Store } from "@/lib/types";
 import RouletteModal from "./RouletteModal";
 import KakaoIcon from "@/app/ui/KakaoIcon";
 import { usePolling } from "@/app/ui/usePolling";
@@ -131,7 +131,12 @@ function MenuBoard() {
     );
     if (!r.ok) return false;
     const d = (await r.json()) as {
-      orders: { id: number; status: string; items_summary: string | null }[];
+      orders: {
+        id: number;
+        daily_no: number | null;
+        status: string;
+        items_summary: string | null;
+      }[];
     };
 
     const seen = readSeen(storeId);
@@ -154,7 +159,7 @@ function MenuBoard() {
           .map((o) => ({
             id: o.id,
             status: o.status as "served" | "rejected",
-            items: o.items_summary ?? `주문 #${o.id}`,
+            items: o.items_summary ?? `주문 ${orderNoLabel(o)}`,
           }));
         return added.length ? [...prev, ...added] : prev;
       });

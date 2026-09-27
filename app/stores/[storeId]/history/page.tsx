@@ -8,12 +8,14 @@ import { won } from "@/lib/useCart";
 import {
   ORDER_STATUS_LABEL,
   PAYMENT_METHOD_LABEL,
+  orderNoLabel,
   type OrderStatus,
   type PaymentMethod,
 } from "@/lib/types";
 
 interface OrderRow {
   id: number;
+  daily_no: number | null;
   table_number: string | null;
   status: OrderStatus;
   payment_method: PaymentMethod | null;
@@ -93,7 +95,7 @@ function HistoryView() {
               >
                 <div>
                   <div className="name">
-                    주문 #{o.id}
+                    주문 {orderNoLabel(o)}
                     <span className={`status ${o.status}`}>
                       {ORDER_STATUS_LABEL[o.status]}
                     </span>

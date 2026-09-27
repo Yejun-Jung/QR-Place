@@ -142,6 +142,8 @@ export interface OrderItem {
 
 export interface Order {
   id: number;
+  /** 매장별·날짜별(한국 시간) 주문번호. 결제 완료 때 1번부터 매긴다. 결제 전이면 null */
+  daily_no: number | null;
   store_id: number;
   user_id: number | null;
   table_number: string | null;
@@ -151,6 +153,11 @@ export interface Order {
   created_at: string;
   paid_at: string | null;
   items: OrderItem[];
+}
+
+/** 화면에 보이는 주문번호: 오늘 번호가 있으면 "3번", 없으면(결제 전·예전 주문) 내부 id */
+export function orderNoLabel(o: { id: number; daily_no: number | null }): string {
+  return o.daily_no != null ? `${o.daily_no}번` : `#${o.id}`;
 }
 
 export interface NewOrderInput {
@@ -171,6 +178,7 @@ export interface RevenueRow {
 
 export interface OrderSummaryRow {
   id: number;
+  daily_no: number | null;
   table_number: string | null;
   status: OrderStatus;
   payment_method: PaymentMethod | null;

@@ -64,6 +64,9 @@ ALTER TABLE orders ADD CONSTRAINT orders_status_check
 -- 게스트 주문 기록용: 주문을 넣은 휴대폰(브라우저) 쿠키 식별값
 ALTER TABLE orders ADD COLUMN IF NOT EXISTS guest_token VARCHAR;
 
+-- 매장별·날짜별 주문번호 (결제 완료 때 매김, 한국 시간 자정마다 1번부터)
+ALTER TABLE orders ADD COLUMN IF NOT EXISTS daily_no INTEGER;
+
 -- 주문 항목 (주문 시점 이름/가격 스냅샷)
 CREATE TABLE IF NOT EXISTS order_items (
   id       SERIAL PRIMARY KEY,

@@ -8,6 +8,7 @@ import { won } from "@/lib/useCart";
 import {
   ORDER_STATUS_LABEL,
   PAYMENT_METHOD_LABEL,
+  orderNoLabel,
   type Order,
   type Store,
 } from "@/lib/types";
@@ -110,7 +111,7 @@ function OrderView() {
                 : ORDER_STATUS_LABEL[order.status]}
         </h2>
         <p className="muted">
-          주문번호 #{order.id} · 테이블 {order.table_number ?? "-"}
+          주문번호 {orderNoLabel(order)} · 테이블 {order.table_number ?? "-"}
         </p>
         {paid && (
           <p className="muted">

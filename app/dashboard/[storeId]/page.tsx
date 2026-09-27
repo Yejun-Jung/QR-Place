@@ -22,6 +22,7 @@ import { won } from "@/lib/useCart";
 import {
   ORDER_STATUS_LABEL,
   PAYMENT_METHOD_LABEL,
+  orderNoLabel,
   type OrderStatus,
   type PaymentMethod,
 } from "@/lib/types";
@@ -104,6 +105,7 @@ interface Stats {
 
 interface OrderRow {
   id: number;
+  daily_no: number | null;
   table_number: string | null;
   status: OrderStatus;
   payment_method: PaymentMethod | null;
@@ -230,7 +232,9 @@ export default function DashboardPage() {
   // 점주 접수 처리 — 완료(served) / 거절(rejected)
   const [handling, setHandling] = useState<number | null>(null);
   const handleOrder = async (orderId: number, status: "served" | "rejected") => {
-    if (status === "rejected" && !confirm(`주문 #${orderId}을(를) 거절할까요?`)) {
+    const target = orders.find((o) => o.id === orderId);
+    const label = target ? orderNoLabel(target) : `#${orderId}`;
+    if (status === "rejected" && !confirm(`주문 ${label}을(를) 거절할까요?`)) {
       return;
     }
     setHandling(orderId);
@@ -434,7 +438,7 @@ export default function DashboardPage() {
               <div key={o.id} className="order-queue-row">
                 <div className="order-queue-top">
                   <span>
-                    #{o.id} · 테이블 {o.table_number ?? "-"}
+                    {orderNoLabel(o)} · 테이블 {o.table_number ?? "-"}
                   </span>
                   <span className={`status ${o.status}`}>
                     {ORDER_STATUS_LABEL[o.status]}

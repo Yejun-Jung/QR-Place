@@ -166,7 +166,7 @@ function CheckoutView() {
 
   return (
     <>
-      <AppHeader title="결제" sub={`주문 #${order.id}`} />
+      <AppHeader title="결제" />
 
       <h2 className="section-title">주문 내역</h2>
       <div className="summary">
