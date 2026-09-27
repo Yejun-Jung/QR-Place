@@ -39,21 +39,30 @@ ChartJS.register(
 
 const CHART_OPTS = { responsive: true, maintainAspectRatio: false } as const;
 
-/** 새 주문 알림음 "띵동" — 소리 파일 없이 Web Audio 로 두 음을 낸다 */
-function playDing(ctx: AudioContext) {
-  const now = ctx.currentTime;
-  [880, 660].forEach((freq, i) => {
+/** 벨 소리 한 음 — 기본음에 배음 두 개를 얹고 빠르게 울렸다가 서서히 사라진다 */
+function bell(ctx: AudioContext, freq: number, t: number, dur: number) {
+  for (const [mult, level] of [[1, 0.3], [2, 0.1], [3, 0.036]]) {
     const osc = ctx.createOscillator();
     const gain = ctx.createGain();
-    osc.frequency.value = freq;
-    const t = now + i * 0.25;
+    osc.frequency.value = freq * mult;
     gain.gain.setValueAtTime(0.0001, t);
-    gain.gain.exponentialRampToValueAtTime(0.3, t + 0.02);
-    gain.gain.exponentialRampToValueAtTime(0.0001, t + 0.5);
+    gain.gain.exponentialRampToValueAtTime(level, t + 0.01);
+    gain.gain.exponentialRampToValueAtTime(0.0001, t + dur);
     osc.connect(gain).connect(ctx.destination);
     osc.start(t);
-    osc.stop(t + 0.5);
-  });
+    osc.stop(t + dur);
+  }
+}
+
+/** 새 주문 알림음: 도-미-솔-(높은)도 벨 차임 두 번. 소리 파일 없이 Web Audio 로 만든다 */
+function playDing(ctx: AudioContext) {
+  const start = ctx.currentTime + 0.05;
+  const notes = [523, 659, 784, 1047]; // C5 E5 G5 C6
+  for (let r = 0; r < 2; r++) {
+    notes.forEach((freq, i) => {
+      bell(ctx, freq, start + r * 1.6 + i * 0.22, i === notes.length - 1 ? 1.2 : 0.9);
+    });
+  }
 }
 // 값 축은 0부터, 눈금은 정수만 (건수·명·원에 0.5 같은 눈금은 의미가 없다)
 const COUNT_AXIS = { beginAtZero: true, ticks: { precision: 0 } } as const;
@@ -88,23 +97,42 @@ export default function DashboardPage() {
   // 매장 이름은 자주 안 바뀌니 폴링과 별개로 한 번만 불러온다 (QR·메뉴 관리와 공용)
   const storeName = useStoreName(storeId);
 
-  // 새 주문 알림. 브라우저는 사용자가 한 번 누르기 전엔 소리를 막으므로
-  // "알림 켜기" 버튼을 눌러야 AudioContext 를 만들 수 있다.
-  const [soundOn, setSoundOn] = useState(false);
+  // 새 주문 알림 — 기본 켜짐, 켜고 끈 설정은 이 기기에 기억한다.
+  // 브라우저는 페이지를 한 번 누르기 전엔 소리를 막으므로, 첫 클릭/키 입력 때
+  // AudioContext 를 깨운다(unlocked). 그 전엔 버튼 옆에 안내를 띄운다.
+  const [soundOn, setSoundOn] = useState(true);
+  const [unlocked, setUnlocked] = useState(false);
   const audioRef = useRef<AudioContext | null>(null);
   /** 이미 본 결제완료 주문 id — 여기 없는 결제완료 주문이 새 주문이다 */
   const seenPaid = useRef<Set<number> | null>(null);
   const seededRange = useRef<number | null>(null);
 
-  const toggleSound = () => {
-    if (soundOn) {
-      setSoundOn(false);
-      return;
+  useEffect(() => {
+    try {
+      if (localStorage.getItem("qp_order_sound") === "off") setSoundOn(false);
+    } catch {
+      // 저장소를 못 쓰는 환경이면 기본값(켜짐) 그대로
     }
-    audioRef.current ??= new AudioContext();
-    void audioRef.current.resume();
-    playDing(audioRef.current); // 켜자마자 한 번 울려서 소리가 나는지 확인
-    setSoundOn(true);
+    const unlock = () => {
+      audioRef.current ??= new AudioContext();
+      void audioRef.current.resume().then(() => setUnlocked(true));
+    };
+    window.addEventListener("pointerdown", unlock);
+    window.addEventListener("keydown", unlock);
+    return () => {
+      window.removeEventListener("pointerdown", unlock);
+      window.removeEventListener("keydown", unlock);
+    };
+  }, []);
+
+  const toggleSound = () => {
+    const next = !soundOn;
+    setSoundOn(next);
+    try {
+      localStorage.setItem("qp_order_sound", next ? "on" : "off");
+    } catch {
+      // 기억만 못 할 뿐 이번 화면에서는 그대로 동작
+    }
   };
 
   // 새 주문 감지: 첫 로드(또는 기간 변경 직후)에 이미 있던 주문은 조용히 기록만 한다
@@ -117,8 +145,10 @@ export default function DashboardPage() {
     }
     const fresh = paidIds.filter((id) => !seenPaid.current!.has(id));
     fresh.forEach((id) => seenPaid.current!.add(id));
-    if (fresh.length > 0 && soundOn && audioRef.current) playDing(audioRef.current);
-  }, [orders, range, soundOn]);
+    if (fresh.length > 0 && soundOn && unlocked && audioRef.current) {
+      playDing(audioRef.current);
+    }
+  }, [orders, range, soundOn, unlocked]);
 
   // 탭 제목에 처리 대기 주문 수 — 다른 탭을 보고 있어도 알 수 있게
   const waitingCount = orders.filter((o) => o.status === "paid").length;
@@ -286,8 +316,13 @@ export default function DashboardPage() {
           style={{ marginLeft: "auto" }}
           onClick={toggleSound}
         >
-          {soundOn ? "🔔 주문 알림 켜짐" : "🔕 주문 알림 켜기"}
+          {soundOn ? "🔔 주문 알림 켜짐" : "🔕 주문 알림 꺼짐"}
         </button>
+        {soundOn && !unlocked && (
+          <span className="muted" style={{ alignSelf: "center", fontSize: "0.8rem" }}>
+            화면을 한 번 클릭하면 소리가 나요
+          </span>
+        )}
       </div>
 
       <div
