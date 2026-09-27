@@ -5,12 +5,14 @@ import {
   useCallback,
   useEffect,
   useMemo,
+  useRef,
   useState,
 } from "react";
 import Link from "next/link";
 import { useParams, useSearchParams } from "next/navigation";
 import { signIn, signOut, useSession } from "next-auth/react";
 import { useCart, won } from "@/lib/useCart";
+import { subjectJosa } from "@/lib/josa";
 import type { Menu, RankedMenu, Store } from "@/lib/types";
 import RouletteModal from "./RouletteModal";
 import KakaoIcon from "@/app/ui/KakaoIcon";
@@ -70,6 +72,14 @@ function MenuBoard() {
   const [rouletteOpen, setRouletteOpen] = useState(false);
   /** 점주가 처리(완료/거절)한 주문 알림 — 손님이 닫을 때까지 메뉴판 위에 뜬다 */
   const [notices, setNotices] = useState<OrderNotice[]>([]);
+  /** 장바구니 담기 확인 토스트 — 잠깐 떴다가 사라진다 */
+  const [toast, setToast] = useState<string | null>(null);
+  const toastTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const showAddedToast = (name: string) => {
+    setToast(`${name}${subjectJosa(name)} 담겼습니다`);
+    if (toastTimer.current) clearTimeout(toastTimer.current);
+    toastTimer.current = setTimeout(() => setToast(null), 1800);
+  };
 
   // table/userId 를 유지한 쿼리스트링
   const nextQs = useMemo(() => {
@@ -167,6 +177,7 @@ function MenuBoard() {
       { menuId: openMenu.id, name: openMenu.name, price: openMenu.price },
       sheetQty,
     );
+    showAddedToast(openMenu.name);
     setOpenMenu(null);
   };
 
@@ -420,7 +431,10 @@ function MenuBoard() {
                     <span className="paired-price">{won(p.price)}</span>
                     <button
                       className="mini-action"
-                      onClick={() => cart.add({ menuId: p.id, name: p.name, price: p.price })}
+                      onClick={() => {
+                        cart.add({ menuId: p.id, name: p.name, price: p.price });
+                        showAddedToast(p.name);
+                      }}
                     >
                       담기
                     </button>
@@ -429,6 +443,12 @@ function MenuBoard() {
               </div>
             )}
           </div>
+        </div>
+      )}
+
+      {toast && (
+        <div className="toast" role="status">
+          {toast}
         </div>
       )}
 

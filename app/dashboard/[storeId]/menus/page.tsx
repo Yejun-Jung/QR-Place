@@ -299,6 +299,9 @@ export default function MenusPage() {
               </div>
               <div>
                 <label className="field">가격대</label>
+                <p className="muted" style={{ margin: "0 0 6px", fontSize: "0.8rem" }}>
+                  저가 6,000원 미만 · 중가 6,000~15,000원 · 고가 15,000원 이상
+                </p>
                 <select
                   className="inp"
                   value={form.price_range}
@@ -310,9 +313,9 @@ export default function MenusPage() {
                   }
                 >
                   <option value="">선택 안 함</option>
-                  <option value="low">low</option>
-                  <option value="mid">mid</option>
-                  <option value="high">high</option>
+                  <option value="low">저가</option>
+                  <option value="mid">중가</option>
+                  <option value="high">고가</option>
                 </select>
               </div>
             </div>
