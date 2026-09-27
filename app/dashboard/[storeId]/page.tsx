@@ -132,6 +132,8 @@ export default function DashboardPage() {
   /** 이미 본 결제완료 주문 id — 여기 없는 결제완료 주문이 새 주문이다 */
   const seenPaid = useRef<Set<number> | null>(null);
   const seededRange = useRef<number | null>(null);
+  /** 주문 목록을 서버에서 한 번이라도 받았는지 — 초기값(빈 배열)으로 기록하면 기존 주문을 새 주문으로 착각한다 */
+  const ordersLoaded = useRef(false);
 
   useEffect(() => {
     try {
@@ -162,6 +164,7 @@ export default function DashboardPage() {
 
   // 새 주문 감지: 첫 로드(또는 기간 변경 직후)에 이미 있던 주문은 조용히 기록만 한다
   useEffect(() => {
+    if (!ordersLoaded.current) return;
     const paidIds = orders.filter((o) => o.status === "paid").map((o) => o.id);
     if (seenPaid.current == null || seededRange.current !== range) {
       seenPaid.current = new Set(paidIds);
@@ -172,13 +175,18 @@ export default function DashboardPage() {
     fresh.forEach((id) => seenPaid.current!.add(id));
     const ctx = audioRef.current;
     if (fresh.length > 0 && soundOn && ctx) {
-      // 아직 막혀 있으면 한 번 더 풀어 보고, 실제로 재생 가능할 때만 울린다
-      // (막힌 채로 예약하면 나중에 클릭하는 순간 뒤늦게 울린다)
-      ctx
-        .resume()
-        .then(() => ctx.state === "running" && playDing(ctx))
+      // 브라우저가 소리를 막고 있으면 resume()이 끝나지 않고 기다리다가 다음 클릭 때 풀린다.
+      // 그때 뒤늦게 울리지 않도록 0.5초 안에 재생 가능해질 때만 울린다.
+      const count = fresh.length;
+      const timeout = new Promise<boolean>((r) => setTimeout(() => r(false), 500));
+      void Promise.race([ctx.resume().then(() => true), timeout])
+        .then((ready) => {
+          if (ready && ctx.state === "running") {
+            playDing(ctx);
+            announce(count);
+          }
+        })
         .catch(() => {});
-      announce(fresh.length);
     }
   }, [orders, range, soundOn]);
 
@@ -217,6 +225,7 @@ export default function DashboardPage() {
         .then(([s, o]: [Stats | null, { orders: OrderRow[] }]) => {
           if (cancelled) return;
           if (s) setStats(s);
+          ordersLoaded.current = true;
           setOrders(o.orders);
           setError(null);
 
